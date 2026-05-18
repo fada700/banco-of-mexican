@@ -27,6 +27,7 @@ import { Route as AuthenticatedEstadoCuentaRouteImport } from './routes/_authent
 import { Route as AuthenticatedDepositarRouteImport } from './routes/_authenticated/depositar'
 import { Route as AuthenticatedCreditoRouteImport } from './routes/_authenticated/credito'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as ApiPublicCronCreditRemindersRouteImport } from './routes/api/public/cron-credit-reminders'
 
 const TrabajadorLoginRoute = TrabajadorLoginRouteImport.update({
   id: '/trabajador-login',
@@ -119,6 +120,12 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const ApiPublicCronCreditRemindersRoute =
+  ApiPublicCronCreditRemindersRouteImport.update({
+    id: '/api/public/cron-credit-reminders',
+    path: '/api/public/cron-credit-reminders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -138,6 +145,7 @@ export interface FileRoutesByFullPath {
   '/transferir': typeof AuthenticatedTransferirRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/code': typeof AuthCodeRoute
+  '/api/public/cron-credit-reminders': typeof ApiPublicCronCreditRemindersRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -157,6 +165,7 @@ export interface FileRoutesByTo {
   '/transferir': typeof AuthenticatedTransferirRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/code': typeof AuthCodeRoute
+  '/api/public/cron-credit-reminders': typeof ApiPublicCronCreditRemindersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -178,6 +187,7 @@ export interface FileRoutesById {
   '/_authenticated/transferir': typeof AuthenticatedTransferirRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/code': typeof AuthCodeRoute
+  '/api/public/cron-credit-reminders': typeof ApiPublicCronCreditRemindersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -199,6 +209,7 @@ export interface FileRouteTypes {
     | '/transferir'
     | '/auth/callback'
     | '/auth/code'
+    | '/api/public/cron-credit-reminders'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -218,6 +229,7 @@ export interface FileRouteTypes {
     | '/transferir'
     | '/auth/callback'
     | '/auth/code'
+    | '/api/public/cron-credit-reminders'
   id:
     | '__root__'
     | '/'
@@ -238,6 +250,7 @@ export interface FileRouteTypes {
     | '/_authenticated/transferir'
     | '/auth/callback'
     | '/auth/code'
+    | '/api/public/cron-credit-reminders'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -248,6 +261,7 @@ export interface RootRouteChildren {
   TrabajadorLoginRoute: typeof TrabajadorLoginRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AuthCodeRoute: typeof AuthCodeRoute
+  ApiPublicCronCreditRemindersRoute: typeof ApiPublicCronCreditRemindersRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -378,6 +392,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/api/public/cron-credit-reminders': {
+      id: '/api/public/cron-credit-reminders'
+      path: '/api/public/cron-credit-reminders'
+      fullPath: '/api/public/cron-credit-reminders'
+      preLoaderRoute: typeof ApiPublicCronCreditRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -421,7 +442,18 @@ const rootRouteChildren: RootRouteChildren = {
   TrabajadorLoginRoute: TrabajadorLoginRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AuthCodeRoute: AuthCodeRoute,
+  ApiPublicCronCreditRemindersRoute: ApiPublicCronCreditRemindersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
