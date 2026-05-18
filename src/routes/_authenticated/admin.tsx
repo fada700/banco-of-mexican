@@ -6,7 +6,11 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsPwa } from "@/hooks/use-is-pwa";
 import { getMe } from "@/lib/usuario.functions";
-import { buscarUsuarios, adminAjustarSaldo, getGanancias, setDueno, listarCreditos } from "@/lib/staff.functions";
+import {
+  buscarUsuarios, adminAjustarSaldo, getGanancias, setDueno, listarCreditos,
+  congelarCuenta, descongelarCuenta, cerrarCuenta, abrirDebitoManual, abrirCreditoManual,
+  listarAuditLogs,
+} from "@/lib/staff.functions";
 import { formatMXN } from "@/lib/format";
 import { PwaBlocked, NoAccess } from "./trabajador-panel";
 
@@ -28,11 +32,27 @@ function AdminPage() {
   const fnGan = useServerFn(getGanancias);
   const fnDueno = useServerFn(setDueno);
   const fnCreditos = useServerFn(listarCreditos);
+  const fnCongelar = useServerFn(congelarCuenta);
+  const fnDescongelar = useServerFn(descongelarCuenta);
+  const fnCerrar = useServerFn(cerrarCuenta);
+  const fnAbrirDebito = useServerFn(abrirDebitoManual);
+  const fnAbrirCredito = useServerFn(abrirCreditoManual);
+  const fnAudit = useServerFn(listarAuditLogs);
 
   const { data: me, isLoading: meLoading } = useQuery({
     queryKey: ["me"], queryFn: () => fetchMe(), staleTime: 60_000,
   });
   const isAdmin = !!me?.roles.includes("admin");
+
+  const [auditQ, setAuditQ] = useState("");
+  const { data: auditLogs } = useQuery({
+    queryKey: ["audit", auditQ], queryFn: () => fnAudit({ data: { q: auditQ || undefined } }),
+    enabled: isAdmin && isPwa === false, staleTime: 15_000,
+  });
+  const [auditOpenId, setAuditOpenId] = useState<string | null>(null);
+
+  const [limiteNuevo, setLimiteNuevo] = useState("");
+  const [motivoCuenta, setMotivoCuenta] = useState("");
 
   const { data: creditos } = useQuery({
     queryKey: ["admin-creditos"], queryFn: () => fnCreditos(),
@@ -163,6 +183,37 @@ function AdminPage() {
                     className="bmx-tap w-full rounded-lg bg-primary text-primary-foreground py-2.5 text-sm font-semibold disabled:opacity-50">
                     Aplicar
                   </button>
+
+                  <div className="border-t border-border pt-3 mt-2 space-y-2">
+                    <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Gestión de cuenta</div>
+                    <input placeholder="Motivo (cuenta/tarjeta)" value={motivoCuenta}
+                      onChange={(e) => setMotivoCuenta(e.target.value)}
+                      className="w-full rounded-lg bg-background border border-border px-3 py-2 text-xs" />
+                    <div className="grid grid-cols-3 gap-2">
+                      <button disabled={busy}
+                        onClick={() => run(() => fnCongelar({ data: { usuario_id: u.id, motivo: motivoCuenta } }), "Cuenta congelada")}
+                        className="bmx-tap rounded-lg border border-border px-2 py-2 text-[11px] font-medium disabled:opacity-50">Congelar</button>
+                      <button disabled={busy}
+                        onClick={() => run(() => fnDescongelar({ data: { usuario_id: u.id, motivo: motivoCuenta } }), "Cuenta activa")}
+                        className="bmx-tap rounded-lg border border-border px-2 py-2 text-[11px] font-medium disabled:opacity-50">Descongelar</button>
+                      <button disabled={busy}
+                        onClick={() => run(() => fnCerrar({ data: { usuario_id: u.id, motivo: motivoCuenta } }), "Cuenta cerrada")}
+                        className="bmx-tap rounded-lg border border-destructive text-destructive px-2 py-2 text-[11px] font-medium disabled:opacity-50">Cerrar</button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button disabled={busy}
+                        onClick={() => run(() => fnAbrirDebito({ data: { usuario_id: u.id, motivo: motivoCuenta } }), "Débito emitido")}
+                        className="bmx-tap rounded-lg border border-border px-2 py-2 text-[11px] font-medium disabled:opacity-50">Emitir débito</button>
+                      <div className="flex gap-1">
+                        <input type="number" placeholder="Límite" value={limiteNuevo}
+                          onChange={(e) => setLimiteNuevo(e.target.value)}
+                          className="w-full rounded-lg bg-background border border-border px-2 text-[11px] font-mono" />
+                        <button disabled={busy || !limiteNuevo || Number(limiteNuevo) <= 0}
+                          onClick={() => run(() => fnAbrirCredito({ data: { usuario_id: u.id, limite: Number(limiteNuevo), motivo: motivoCuenta } }), "Crédito emitido")}
+                          className="bmx-tap rounded-lg border border-border px-2 py-2 text-[11px] font-medium disabled:opacity-50">Crédito</button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -187,6 +238,53 @@ function AdminPage() {
                 <div className="text-sm font-mono">{formatMXN(c.saldo_usado)}</div>
                 <div className="text-[10px] text-muted-foreground">de {formatMXN(c.limite)}</div>
               </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="container-app mt-8">
+        <div className="flex items-baseline justify-between mb-3">
+          <h2 className="text-base font-semibold">Auditoría</h2>
+          <a
+            href={`data:text/csv;charset=utf-8,${encodeURIComponent(
+              "fecha,accion,entidad,cliente,realizado_por,rol,detalle\n" +
+              (auditLogs ?? []).map((r) =>
+                [r.fecha_hora, r.accion, r.entidad ?? "", r.cliente_nombre ?? "",
+                 r.realizado_por_nombre ?? "", r.realizado_por_rol ?? "",
+                 JSON.stringify(r.detalle).replace(/"/g, '""')]
+                  .map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","),
+              ).join("\n"),
+            )}`}
+            download={`auditoria-${new Date().toISOString().slice(0, 10)}.csv`}
+            className="text-xs text-primary underline">
+            Exportar CSV
+          </a>
+        </div>
+        <input value={auditQ} onChange={(e) => setAuditQ(e.target.value)}
+          placeholder="Buscar por cliente o staff"
+          className="w-full rounded-xl bg-surface border border-border px-3 py-3 text-sm mb-3" />
+        <div className="rounded-2xl border border-border bg-surface divide-y divide-border max-h-[600px] overflow-auto">
+          {!auditLogs?.length && <div className="p-5 text-sm text-muted-foreground text-center">Sin registros</div>}
+          {auditLogs?.map((r) => (
+            <div key={r.id} className="p-3">
+              <button onClick={() => setAuditOpenId((id) => (id === r.id ? null : r.id))}
+                className="w-full text-left flex justify-between items-baseline gap-2">
+                <div className="min-w-0">
+                  <div className="text-xs font-semibold">{r.accion}
+                    {r.cliente_nombre && <span className="text-muted-foreground font-normal"> · {r.cliente_nombre}</span>}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground truncate">
+                    {new Date(r.fecha_hora).toLocaleString("es-MX")} · {r.realizado_por_nombre ?? "—"} ({r.realizado_por_rol ?? "—"})
+                  </div>
+                </div>
+                <span className="text-[10px] text-muted-foreground">{auditOpenId === r.id ? "▲" : "▼"}</span>
+              </button>
+              {auditOpenId === r.id && (
+                <pre className="mt-2 text-[10px] bg-background border border-border rounded-lg p-2 overflow-auto font-mono">
+{JSON.stringify(r.detalle, null, 2)}
+                </pre>
+              )}
             </div>
           ))}
         </div>
