@@ -242,6 +242,53 @@ function AdminPage() {
           ))}
         </div>
       </section>
+
+      <section className="container-app mt-8">
+        <div className="flex items-baseline justify-between mb-3">
+          <h2 className="text-base font-semibold">Auditoría</h2>
+          <a
+            href={`data:text/csv;charset=utf-8,${encodeURIComponent(
+              "fecha,accion,entidad,cliente,realizado_por,rol,detalle\n" +
+              (auditLogs ?? []).map((r) =>
+                [r.fecha_hora, r.accion, r.entidad ?? "", r.cliente_nombre ?? "",
+                 r.realizado_por_nombre ?? "", r.realizado_por_rol ?? "",
+                 JSON.stringify(r.detalle).replace(/"/g, '""')]
+                  .map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","),
+              ).join("\n"),
+            )}`}
+            download={`auditoria-${new Date().toISOString().slice(0, 10)}.csv`}
+            className="text-xs text-primary underline">
+            Exportar CSV
+          </a>
+        </div>
+        <input value={auditQ} onChange={(e) => setAuditQ(e.target.value)}
+          placeholder="Buscar por cliente o staff"
+          className="w-full rounded-xl bg-surface border border-border px-3 py-3 text-sm mb-3" />
+        <div className="rounded-2xl border border-border bg-surface divide-y divide-border max-h-[600px] overflow-auto">
+          {!auditLogs?.length && <div className="p-5 text-sm text-muted-foreground text-center">Sin registros</div>}
+          {auditLogs?.map((r) => (
+            <div key={r.id} className="p-3">
+              <button onClick={() => setAuditOpenId((id) => (id === r.id ? null : r.id))}
+                className="w-full text-left flex justify-between items-baseline gap-2">
+                <div className="min-w-0">
+                  <div className="text-xs font-semibold">{r.accion}
+                    {r.cliente_nombre && <span className="text-muted-foreground font-normal"> · {r.cliente_nombre}</span>}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground truncate">
+                    {new Date(r.fecha_hora).toLocaleString("es-MX")} · {r.realizado_por_nombre ?? "—"} ({r.realizado_por_rol ?? "—"})
+                  </div>
+                </div>
+                <span className="text-[10px] text-muted-foreground">{auditOpenId === r.id ? "▲" : "▼"}</span>
+              </button>
+              {auditOpenId === r.id && (
+                <pre className="mt-2 text-[10px] bg-background border border-border rounded-lg p-2 overflow-auto font-mono">
+{JSON.stringify(r.detalle, null, 2)}
+                </pre>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
