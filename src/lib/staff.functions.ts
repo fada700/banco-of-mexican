@@ -402,7 +402,7 @@ export interface AuditRow {
   cliente_nombre: string | null;
   realizado_por_nombre: string | null;
   realizado_por_rol: string | null;
-  detalle: unknown;
+  detalle: any;
 }
 
 export const listarAuditLogs = createServerFn({ method: "GET" })
