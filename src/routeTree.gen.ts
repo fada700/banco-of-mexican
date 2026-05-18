@@ -23,6 +23,7 @@ import { Route as AuthenticatedRetirarRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedHistorialRouteImport } from './routes/_authenticated/historial'
+import { Route as AuthenticatedEstadoCuentaRouteImport } from './routes/_authenticated/estado-cuenta'
 import { Route as AuthenticatedDepositarRouteImport } from './routes/_authenticated/depositar'
 import { Route as AuthenticatedCreditoRouteImport } from './routes/_authenticated/credito'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
@@ -97,6 +98,12 @@ const AuthenticatedHistorialRoute = AuthenticatedHistorialRouteImport.update({
   path: '/historial',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedEstadoCuentaRoute =
+  AuthenticatedEstadoCuentaRouteImport.update({
+    id: '/estado-cuenta',
+    path: '/estado-cuenta',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedDepositarRoute = AuthenticatedDepositarRouteImport.update({
   id: '/depositar',
   path: '/depositar',
@@ -121,6 +128,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/credito': typeof AuthenticatedCreditoRoute
   '/depositar': typeof AuthenticatedDepositarRoute
+  '/estado-cuenta': typeof AuthenticatedEstadoCuentaRoute
   '/historial': typeof AuthenticatedHistorialRoute
   '/home': typeof AuthenticatedHomeRoute
   '/perfil': typeof AuthenticatedPerfilRoute
@@ -139,6 +147,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/credito': typeof AuthenticatedCreditoRoute
   '/depositar': typeof AuthenticatedDepositarRoute
+  '/estado-cuenta': typeof AuthenticatedEstadoCuentaRoute
   '/historial': typeof AuthenticatedHistorialRoute
   '/home': typeof AuthenticatedHomeRoute
   '/perfil': typeof AuthenticatedPerfilRoute
@@ -159,6 +168,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/credito': typeof AuthenticatedCreditoRoute
   '/_authenticated/depositar': typeof AuthenticatedDepositarRoute
+  '/_authenticated/estado-cuenta': typeof AuthenticatedEstadoCuentaRoute
   '/_authenticated/historial': typeof AuthenticatedHistorialRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/perfil': typeof AuthenticatedPerfilRoute
@@ -179,6 +189,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/credito'
     | '/depositar'
+    | '/estado-cuenta'
     | '/historial'
     | '/home'
     | '/perfil'
@@ -197,6 +208,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/credito'
     | '/depositar'
+    | '/estado-cuenta'
     | '/historial'
     | '/home'
     | '/perfil'
@@ -216,6 +228,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/credito'
     | '/_authenticated/depositar'
+    | '/_authenticated/estado-cuenta'
     | '/_authenticated/historial'
     | '/_authenticated/home'
     | '/_authenticated/perfil'
@@ -337,6 +350,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedHistorialRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/estado-cuenta': {
+      id: '/_authenticated/estado-cuenta'
+      path: '/estado-cuenta'
+      fullPath: '/estado-cuenta'
+      preLoaderRoute: typeof AuthenticatedEstadoCuentaRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/depositar': {
       id: '/_authenticated/depositar'
       path: '/depositar'
@@ -365,6 +385,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedCreditoRoute: typeof AuthenticatedCreditoRoute
   AuthenticatedDepositarRoute: typeof AuthenticatedDepositarRoute
+  AuthenticatedEstadoCuentaRoute: typeof AuthenticatedEstadoCuentaRoute
   AuthenticatedHistorialRoute: typeof AuthenticatedHistorialRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedPerfilRoute: typeof AuthenticatedPerfilRoute
@@ -378,6 +399,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedCreditoRoute: AuthenticatedCreditoRoute,
   AuthenticatedDepositarRoute: AuthenticatedDepositarRoute,
+  AuthenticatedEstadoCuentaRoute: AuthenticatedEstadoCuentaRoute,
   AuthenticatedHistorialRoute: AuthenticatedHistorialRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedPerfilRoute: AuthenticatedPerfilRoute,
@@ -403,3 +425,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
