@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          accion: string
+          cliente_nombre: string | null
+          detalle: Json
+          entidad: string | null
+          entidad_id: string | null
+          fecha_hora: string
+          id: string
+          ip_address: string | null
+          realizado_por_id: string | null
+          realizado_por_nombre: string | null
+          realizado_por_rol: string | null
+        }
+        Insert: {
+          accion: string
+          cliente_nombre?: string | null
+          detalle?: Json
+          entidad?: string | null
+          entidad_id?: string | null
+          fecha_hora?: string
+          id?: string
+          ip_address?: string | null
+          realizado_por_id?: string | null
+          realizado_por_nombre?: string | null
+          realizado_por_rol?: string | null
+        }
+        Update: {
+          accion?: string
+          cliente_nombre?: string | null
+          detalle?: Json
+          entidad?: string | null
+          entidad_id?: string | null
+          fecha_hora?: string
+          id?: string
+          ip_address?: string | null
+          realizado_por_id?: string | null
+          realizado_por_nombre?: string | null
+          realizado_por_rol?: string | null
+        }
+        Relationships: []
+      }
       config: {
         Row: {
           comision_porcentaje: number
@@ -183,6 +225,39 @@ export type Database = {
           },
         ]
       }
+      notification_log: {
+        Row: {
+          discord_user_id: string | null
+          enviado_en: string
+          error: string | null
+          estado: Database["public"]["Enums"]["estado_notificacion"]
+          id: string
+          mensaje: string
+          tipo_notificacion: string
+          usuario_id: string
+        }
+        Insert: {
+          discord_user_id?: string | null
+          enviado_en?: string
+          error?: string | null
+          estado?: Database["public"]["Enums"]["estado_notificacion"]
+          id?: string
+          mensaje: string
+          tipo_notificacion: string
+          usuario_id: string
+        }
+        Update: {
+          discord_user_id?: string | null
+          enviado_en?: string
+          error?: string | null
+          estado?: Database["public"]["Enums"]["estado_notificacion"]
+          id?: string
+          mensaje?: string
+          tipo_notificacion?: string
+          usuario_id?: string
+        }
+        Relationships: []
+      }
       roles_usuario: {
         Row: {
           id: string
@@ -259,6 +334,7 @@ export type Database = {
           cvv: string | null
           dias_vencidos: number
           estado: Database["public"]["Enums"]["estado_credito"]
+          fecha_corte: string | null
           fecha_limite_pago: string | null
           fecha_uso: string | null
           id: string
@@ -275,6 +351,7 @@ export type Database = {
           cvv?: string | null
           dias_vencidos?: number
           estado?: Database["public"]["Enums"]["estado_credito"]
+          fecha_corte?: string | null
           fecha_limite_pago?: string | null
           fecha_uso?: string | null
           id?: string
@@ -291,6 +368,7 @@ export type Database = {
           cvv?: string | null
           dias_vencidos?: number
           estado?: Database["public"]["Enums"]["estado_credito"]
+          fecha_corte?: string | null
           fecha_limite_pago?: string | null
           fecha_uso?: string | null
           id?: string
@@ -318,6 +396,7 @@ export type Database = {
           congelada: boolean
           creada_en: string
           cvv: string
+          estado: Database["public"]["Enums"]["estado_tarjeta_debito"]
           id: string
           numero: string
           usuario_id: string
@@ -327,6 +406,7 @@ export type Database = {
           congelada?: boolean
           creada_en?: string
           cvv: string
+          estado?: Database["public"]["Enums"]["estado_tarjeta_debito"]
           id?: string
           numero: string
           usuario_id: string
@@ -336,6 +416,7 @@ export type Database = {
           congelada?: boolean
           creada_en?: string
           cvv?: string
+          estado?: Database["public"]["Enums"]["estado_tarjeta_debito"]
           id?: string
           numero?: string
           usuario_id?: string
@@ -355,9 +436,11 @@ export type Database = {
         Row: {
           auth_user_id: string | null
           bloqueado_hasta: string | null
+          clabe: string | null
           discord_avatar_url: string | null
           discord_id: string
           discord_username: string
+          estado_cuenta: Database["public"]["Enums"]["estado_cuenta_general"]
           fecha_registro: string
           id: string
           intentos_fallidos: number
@@ -371,9 +454,11 @@ export type Database = {
         Insert: {
           auth_user_id?: string | null
           bloqueado_hasta?: string | null
+          clabe?: string | null
           discord_avatar_url?: string | null
           discord_id: string
           discord_username: string
+          estado_cuenta?: Database["public"]["Enums"]["estado_cuenta_general"]
           fecha_registro?: string
           id?: string
           intentos_fallidos?: number
@@ -387,9 +472,11 @@ export type Database = {
         Update: {
           auth_user_id?: string | null
           bloqueado_hasta?: string | null
+          clabe?: string | null
           discord_avatar_url?: string | null
           discord_id?: string
           discord_username?: string
+          estado_cuenta?: Database["public"]["Enums"]["estado_cuenta_general"]
           fecha_registro?: string
           id?: string
           intentos_fallidos?: number
@@ -407,6 +494,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      abrir_credito_manual: {
+        Args: { _limite: number; _motivo: string; _usuario_id: string }
+        Returns: undefined
+      }
+      abrir_debito_manual: {
+        Args: { _motivo: string; _usuario_id: string }
+        Returns: undefined
+      }
       admin_ajustar_saldo: {
         Args: {
           _cuenta: string
@@ -424,13 +519,36 @@ export type Database = {
         Args: { _solicitud_id: string }
         Returns: undefined
       }
+      cerrar_cuenta: {
+        Args: { _motivo: string; _usuario_id: string }
+        Returns: undefined
+      }
       condonar_deuda: { Args: { _usuario_id: string }; Returns: undefined }
+      congelar_cuenta: {
+        Args: { _motivo: string; _usuario_id: string }
+        Returns: undefined
+      }
       current_usuario_id: { Args: never; Returns: string }
+      descongelar_cuenta: {
+        Args: { _motivo: string; _usuario_id: string }
+        Returns: undefined
+      }
       dueno_usuario_id: { Args: never; Returns: string }
+      generar_clabe: { Args: never; Returns: string }
       generar_numero_cliente: { Args: never; Returns: string }
       has_role: {
         Args: { _role: Database["public"]["Enums"]["app_role"] }
         Returns: boolean
+      }
+      log_audit: {
+        Args: {
+          _accion: string
+          _cliente_nombre: string
+          _detalle: Json
+          _entidad: string
+          _entidad_id: string
+        }
+        Returns: undefined
       }
       op_depositar: { Args: { _monto: number }; Returns: undefined }
       op_retirar: { Args: { _monto: number }; Returns: undefined }
@@ -460,7 +578,11 @@ export type Database = {
         | "activa"
         | "bloqueada"
         | "rechazada"
+        | "cerrada"
+      estado_cuenta_general: "activa" | "congelada" | "cerrada"
+      estado_notificacion: "enviado" | "fallido"
       estado_solicitud: "pendiente" | "aprobada" | "rechazada"
+      estado_tarjeta_debito: "activa" | "congelada" | "cerrada"
       tipo_membresia: "basica" | "plus" | "black"
       tipo_movimiento:
         | "deposito"
@@ -610,8 +732,12 @@ export const Constants = {
         "activa",
         "bloqueada",
         "rechazada",
+        "cerrada",
       ],
+      estado_cuenta_general: ["activa", "congelada", "cerrada"],
+      estado_notificacion: ["enviado", "fallido"],
       estado_solicitud: ["pendiente", "aprobada", "rechazada"],
+      estado_tarjeta_debito: ["activa", "congelada", "cerrada"],
       tipo_membresia: ["basica", "plus", "black"],
       tipo_movimiento: [
         "deposito",
