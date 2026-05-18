@@ -4,7 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export interface CreditoInfo {
-  estado: "sin_solicitar" | "pendiente" | "activa" | "bloqueada" | "rechazada";
+  estado: "sin_solicitar" | "pendiente" | "activa" | "bloqueada" | "rechazada" | "cerrada";
   numero: string | null;
   cvv: string | null;
   vencimiento: string | null;
