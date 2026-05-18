@@ -19,6 +19,11 @@ async function usuarioIdFromAuth(authUserId: string): Promise<string> {
   return data.id;
 }
 
+async function getSaldo(uid: string) {
+  const { data } = await supabaseAdmin.from("usuarios").select("saldo_banco").eq("id", uid).single();
+  return Number(data?.saldo_banco ?? 0);
+}
+
 export const depositar = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { monto: number }) =>
@@ -27,6 +32,14 @@ export const depositar = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.rpc("op_depositar", { _monto: data.monto });
     if (error) throw new Error(error.message);
+    const uid = await usuarioIdFromAuth(context.userId);
+    const saldo = await getSaldo(uid);
+    notify({
+      usuario_id: uid, tipo: "transaccion", color: 0x16a34a,
+      titulo: "Depósito recibido",
+      descripcion: `Se depositaron ${formatMoney(data.monto)} a tu cuenta bancaria.`,
+      fields: [{ name: "Saldo actual", value: formatMoney(saldo), inline: true }],
+    }).catch(() => {});
     return { ok: true };
   });
 
@@ -38,6 +51,14 @@ export const retirar = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.rpc("op_retirar", { _monto: data.monto });
     if (error) throw new Error(error.message);
+    const uid = await usuarioIdFromAuth(context.userId);
+    const saldo = await getSaldo(uid);
+    notify({
+      usuario_id: uid, tipo: "transaccion", color: 0xea580c,
+      titulo: "Retiro",
+      descripcion: `Retiraste ${formatMoney(data.monto)} de tu cuenta bancaria.`,
+      fields: [{ name: "Saldo actual", value: formatMoney(saldo), inline: true }],
+    }).catch(() => {});
     return { ok: true };
   });
 
@@ -57,13 +78,29 @@ export const transferir = createServerFn({ method: "POST" })
       _concepto: data.concepto ?? "",
     });
     if (error) throw new Error(error.message);
-    return result as unknown as {
-      monto: number;
-      comision: number;
-      total: number;
-      destino_nombre: string;
-      destino_numero: string;
+    const r = result as unknown as {
+      monto: number; comision: number; total: number;
+      destino_nombre: string; destino_numero: string; destino_id: string;
     };
+    const uid = await usuarioIdFromAuth(context.userId);
+    const saldoOrigen = await getSaldo(uid);
+    const saldoDest = await getSaldo(r.destino_id);
+    notify({
+      usuario_id: uid, tipo: "transaccion", color: 0xea580c,
+      titulo: "Transferencia enviada",
+      descripcion: `Enviaste ${formatMoney(r.monto)} a ${r.destino_nombre}.`,
+      fields: [
+        { name: "Comisión", value: formatMoney(r.comision), inline: true },
+        { name: "Saldo actual", value: formatMoney(saldoOrigen), inline: true },
+      ],
+    }).catch(() => {});
+    notify({
+      usuario_id: r.destino_id, tipo: "transaccion", color: 0x16a34a,
+      titulo: "Transferencia recibida",
+      descripcion: `Recibiste ${formatMoney(r.monto)}${data.concepto ? ` — ${data.concepto}` : ""}.`,
+      fields: [{ name: "Saldo actual", value: formatMoney(saldoDest), inline: true }],
+    }).catch(() => {});
+    return r;
   });
 
 export const toggleTarjeta = createServerFn({ method: "POST" })
