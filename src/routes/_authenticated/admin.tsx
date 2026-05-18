@@ -32,11 +32,27 @@ function AdminPage() {
   const fnGan = useServerFn(getGanancias);
   const fnDueno = useServerFn(setDueno);
   const fnCreditos = useServerFn(listarCreditos);
+  const fnCongelar = useServerFn(congelarCuenta);
+  const fnDescongelar = useServerFn(descongelarCuenta);
+  const fnCerrar = useServerFn(cerrarCuenta);
+  const fnAbrirDebito = useServerFn(abrirDebitoManual);
+  const fnAbrirCredito = useServerFn(abrirCreditoManual);
+  const fnAudit = useServerFn(listarAuditLogs);
 
   const { data: me, isLoading: meLoading } = useQuery({
     queryKey: ["me"], queryFn: () => fetchMe(), staleTime: 60_000,
   });
   const isAdmin = !!me?.roles.includes("admin");
+
+  const [auditQ, setAuditQ] = useState("");
+  const { data: auditLogs } = useQuery({
+    queryKey: ["audit", auditQ], queryFn: () => fnAudit({ data: { q: auditQ || undefined } }),
+    enabled: isAdmin && isPwa === false, staleTime: 15_000,
+  });
+  const [auditOpenId, setAuditOpenId] = useState<string | null>(null);
+
+  const [limiteNuevo, setLimiteNuevo] = useState("");
+  const [motivoCuenta, setMotivoCuenta] = useState("");
 
   const { data: creditos } = useQuery({
     queryKey: ["admin-creditos"], queryFn: () => fnCreditos(),
