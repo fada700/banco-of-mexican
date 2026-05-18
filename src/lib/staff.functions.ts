@@ -301,3 +301,128 @@ export const setDueno = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// === GESTIÓN DE CUENTA (staff) ===
+
+export const congelarCuenta = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { usuario_id: string; motivo?: string }) =>
+    z.object({ usuario_id: z.string().uuid(), motivo: z.string().max(200).optional() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.rpc("congelar_cuenta", {
+      _usuario_id: data.usuario_id, _motivo: data.motivo ?? "",
+    });
+    if (error) throw new Error(error.message);
+    await notify({
+      usuario_id: data.usuario_id, tipo: "cuenta_congelada",
+      titulo: "🧊 Cuenta congelada",
+      descripcion: `Tu cuenta ha sido congelada${data.motivo ? `: ${data.motivo}` : "."} No podrás realizar operaciones.`,
+      color: 0x0ea5e9,
+    });
+    return { ok: true };
+  });
+
+export const descongelarCuenta = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { usuario_id: string; motivo?: string }) =>
+    z.object({ usuario_id: z.string().uuid(), motivo: z.string().max(200).optional() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.rpc("descongelar_cuenta", {
+      _usuario_id: data.usuario_id, _motivo: data.motivo ?? "",
+    });
+    if (error) throw new Error(error.message);
+    await notify({
+      usuario_id: data.usuario_id, tipo: "cuenta_descongelada",
+      titulo: "✅ Cuenta reactivada",
+      descripcion: "Tu cuenta ha sido descongelada. Ya puedes operar normalmente.",
+      color: 0x16a34a,
+    });
+    return { ok: true };
+  });
+
+export const cerrarCuenta = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { usuario_id: string; motivo?: string }) =>
+    z.object({ usuario_id: z.string().uuid(), motivo: z.string().max(200).optional() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.rpc("cerrar_cuenta", {
+      _usuario_id: data.usuario_id, _motivo: data.motivo ?? "",
+    });
+    if (error) throw new Error(error.message);
+    await notify({
+      usuario_id: data.usuario_id, tipo: "cuenta_cerrada",
+      titulo: "🚫 Cuenta cerrada",
+      descripcion: `Tu cuenta ha sido cerrada${data.motivo ? `: ${data.motivo}` : "."} Contacta soporte si crees que es un error.`,
+      color: 0xdc2626,
+    });
+    return { ok: true };
+  });
+
+export const abrirDebitoManual = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { usuario_id: string; motivo?: string }) =>
+    z.object({ usuario_id: z.string().uuid(), motivo: z.string().max(200).optional() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.rpc("abrir_debito_manual", {
+      _usuario_id: data.usuario_id, _motivo: data.motivo ?? "",
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const abrirCreditoManual = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { usuario_id: string; limite: number; motivo?: string }) =>
+    z.object({
+      usuario_id: z.string().uuid(),
+      limite: z.number().positive().max(10_000_000),
+      motivo: z.string().max(200).optional(),
+    }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.rpc("abrir_credito_manual", {
+      _usuario_id: data.usuario_id, _limite: data.limite, _motivo: data.motivo ?? "",
+    });
+    if (error) throw new Error(error.message);
+    await notify({
+      usuario_id: data.usuario_id, tipo: "credito_aprobado",
+      titulo: "✅ Tarjeta de crédito emitida",
+      descripcion: `Se te emitió una tarjeta de crédito con límite de ${formatMoney(data.limite)}.`,
+      color: 0x16a34a,
+    });
+    return { ok: true };
+  });
+
+// === AUDITORÍA (admin) ===
+
+export interface AuditRow {
+  id: string;
+  fecha_hora: string;
+  accion: string;
+  entidad: string | null;
+  cliente_nombre: string | null;
+  realizado_por_nombre: string | null;
+  realizado_por_rol: string | null;
+  detalle: Record<string, unknown>;
+}
+
+export const listarAuditLogs = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { q?: string; accion?: string; limit?: number } | undefined) =>
+    z.object({
+      q: z.string().max(80).optional(),
+      accion: z.string().max(40).optional(),
+      limit: z.number().min(1).max(500).optional(),
+    }).parse(d ?? {}))
+  .handler(async ({ data, context }): Promise<AuditRow[]> => {
+    await assertStaff(context.userId, true);
+    let q = supabaseAdmin
+      .from("audit_logs")
+      .select("id, fecha_hora, accion, entidad, cliente_nombre, realizado_por_nombre, realizado_por_rol, detalle")
+      .order("fecha_hora", { ascending: false })
+      .limit(data.limit ?? 200);
+    if (data.accion) q = q.eq("accion", data.accion);
+    if (data.q) q = q.or(`cliente_nombre.ilike.%${data.q}%,realizado_por_nombre.ilike.%${data.q}%`);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    return (rows ?? []) as AuditRow[];
+  });
