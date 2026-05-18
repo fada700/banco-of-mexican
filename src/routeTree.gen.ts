@@ -9,38 +9,264 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TrabajadorLoginRouteImport } from './routes/trabajador-login'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as AdminLoginRouteImport } from './routes/admin-login'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthCodeRouteImport } from './routes/auth/code'
+import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
+import { Route as AuthenticatedTransferirRouteImport } from './routes/_authenticated/transferir'
+import { Route as AuthenticatedTrabajadorPanelRouteImport } from './routes/_authenticated/trabajador-panel'
+import { Route as AuthenticatedTarjetasRouteImport } from './routes/_authenticated/tarjetas'
+import { Route as AuthenticatedRetirarRouteImport } from './routes/_authenticated/retirar'
+import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
+import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
+import { Route as AuthenticatedHistorialRouteImport } from './routes/_authenticated/historial'
+import { Route as AuthenticatedDepositarRouteImport } from './routes/_authenticated/depositar'
+import { Route as AuthenticatedCreditoRouteImport } from './routes/_authenticated/credito'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 
+const TrabajadorLoginRoute = TrabajadorLoginRouteImport.update({
+  id: '/trabajador-login',
+  path: '/trabajador-login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/admin-login',
+  path: '/admin-login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthCodeRoute = AuthCodeRouteImport.update({
+  id: '/auth/code',
+  path: '/auth/code',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedTransferirRoute = AuthenticatedTransferirRouteImport.update({
+  id: '/transferir',
+  path: '/transferir',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedTrabajadorPanelRoute =
+  AuthenticatedTrabajadorPanelRouteImport.update({
+    id: '/trabajador-panel',
+    path: '/trabajador-panel',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedTarjetasRoute = AuthenticatedTarjetasRouteImport.update({
+  id: '/tarjetas',
+  path: '/tarjetas',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedRetirarRoute = AuthenticatedRetirarRouteImport.update({
+  id: '/retirar',
+  path: '/retirar',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedPerfilRoute = AuthenticatedPerfilRouteImport.update({
+  id: '/perfil',
+  path: '/perfil',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedHomeRoute = AuthenticatedHomeRouteImport.update({
+  id: '/home',
+  path: '/home',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedHistorialRoute = AuthenticatedHistorialRouteImport.update({
+  id: '/historial',
+  path: '/historial',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedDepositarRoute = AuthenticatedDepositarRouteImport.update({
+  id: '/depositar',
+  path: '/depositar',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedCreditoRoute = AuthenticatedCreditoRouteImport.update({
+  id: '/credito',
+  path: '/credito',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin-login': typeof AdminLoginRoute
+  '/login': typeof LoginRoute
+  '/trabajador-login': typeof TrabajadorLoginRoute
+  '/admin': typeof AuthenticatedAdminRoute
+  '/credito': typeof AuthenticatedCreditoRoute
+  '/depositar': typeof AuthenticatedDepositarRoute
+  '/historial': typeof AuthenticatedHistorialRoute
+  '/home': typeof AuthenticatedHomeRoute
+  '/perfil': typeof AuthenticatedPerfilRoute
+  '/retirar': typeof AuthenticatedRetirarRoute
+  '/tarjetas': typeof AuthenticatedTarjetasRoute
+  '/trabajador-panel': typeof AuthenticatedTrabajadorPanelRoute
+  '/transferir': typeof AuthenticatedTransferirRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/auth/code': typeof AuthCodeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin-login': typeof AdminLoginRoute
+  '/login': typeof LoginRoute
+  '/trabajador-login': typeof TrabajadorLoginRoute
+  '/admin': typeof AuthenticatedAdminRoute
+  '/credito': typeof AuthenticatedCreditoRoute
+  '/depositar': typeof AuthenticatedDepositarRoute
+  '/historial': typeof AuthenticatedHistorialRoute
+  '/home': typeof AuthenticatedHomeRoute
+  '/perfil': typeof AuthenticatedPerfilRoute
+  '/retirar': typeof AuthenticatedRetirarRoute
+  '/tarjetas': typeof AuthenticatedTarjetasRoute
+  '/trabajador-panel': typeof AuthenticatedTrabajadorPanelRoute
+  '/transferir': typeof AuthenticatedTransferirRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/auth/code': typeof AuthCodeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/admin-login': typeof AdminLoginRoute
+  '/login': typeof LoginRoute
+  '/trabajador-login': typeof TrabajadorLoginRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/credito': typeof AuthenticatedCreditoRoute
+  '/_authenticated/depositar': typeof AuthenticatedDepositarRoute
+  '/_authenticated/historial': typeof AuthenticatedHistorialRoute
+  '/_authenticated/home': typeof AuthenticatedHomeRoute
+  '/_authenticated/perfil': typeof AuthenticatedPerfilRoute
+  '/_authenticated/retirar': typeof AuthenticatedRetirarRoute
+  '/_authenticated/tarjetas': typeof AuthenticatedTarjetasRoute
+  '/_authenticated/trabajador-panel': typeof AuthenticatedTrabajadorPanelRoute
+  '/_authenticated/transferir': typeof AuthenticatedTransferirRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/auth/code': typeof AuthCodeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/admin-login'
+    | '/login'
+    | '/trabajador-login'
+    | '/admin'
+    | '/credito'
+    | '/depositar'
+    | '/historial'
+    | '/home'
+    | '/perfil'
+    | '/retirar'
+    | '/tarjetas'
+    | '/trabajador-panel'
+    | '/transferir'
+    | '/auth/callback'
+    | '/auth/code'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/admin-login'
+    | '/login'
+    | '/trabajador-login'
+    | '/admin'
+    | '/credito'
+    | '/depositar'
+    | '/historial'
+    | '/home'
+    | '/perfil'
+    | '/retirar'
+    | '/tarjetas'
+    | '/trabajador-panel'
+    | '/transferir'
+    | '/auth/callback'
+    | '/auth/code'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/admin-login'
+    | '/login'
+    | '/trabajador-login'
+    | '/_authenticated/admin'
+    | '/_authenticated/credito'
+    | '/_authenticated/depositar'
+    | '/_authenticated/historial'
+    | '/_authenticated/home'
+    | '/_authenticated/perfil'
+    | '/_authenticated/retirar'
+    | '/_authenticated/tarjetas'
+    | '/_authenticated/trabajador-panel'
+    | '/_authenticated/transferir'
+    | '/auth/callback'
+    | '/auth/code'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  AdminLoginRoute: typeof AdminLoginRoute
+  LoginRoute: typeof LoginRoute
+  TrabajadorLoginRoute: typeof TrabajadorLoginRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
+  AuthCodeRoute: typeof AuthCodeRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/trabajador-login': {
+      id: '/trabajador-login'
+      path: '/trabajador-login'
+      fullPath: '/trabajador-login'
+      preLoaderRoute: typeof TrabajadorLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin-login': {
+      id: '/admin-login'
+      path: '/admin-login'
+      fullPath: '/admin-login'
+      preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,22 +274,132 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/code': {
+      id: '/auth/code'
+      path: '/auth/code'
+      fullPath: '/auth/code'
+      preLoaderRoute: typeof AuthCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/transferir': {
+      id: '/_authenticated/transferir'
+      path: '/transferir'
+      fullPath: '/transferir'
+      preLoaderRoute: typeof AuthenticatedTransferirRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/trabajador-panel': {
+      id: '/_authenticated/trabajador-panel'
+      path: '/trabajador-panel'
+      fullPath: '/trabajador-panel'
+      preLoaderRoute: typeof AuthenticatedTrabajadorPanelRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/tarjetas': {
+      id: '/_authenticated/tarjetas'
+      path: '/tarjetas'
+      fullPath: '/tarjetas'
+      preLoaderRoute: typeof AuthenticatedTarjetasRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/retirar': {
+      id: '/_authenticated/retirar'
+      path: '/retirar'
+      fullPath: '/retirar'
+      preLoaderRoute: typeof AuthenticatedRetirarRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/perfil': {
+      id: '/_authenticated/perfil'
+      path: '/perfil'
+      fullPath: '/perfil'
+      preLoaderRoute: typeof AuthenticatedPerfilRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/home': {
+      id: '/_authenticated/home'
+      path: '/home'
+      fullPath: '/home'
+      preLoaderRoute: typeof AuthenticatedHomeRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/historial': {
+      id: '/_authenticated/historial'
+      path: '/historial'
+      fullPath: '/historial'
+      preLoaderRoute: typeof AuthenticatedHistorialRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/depositar': {
+      id: '/_authenticated/depositar'
+      path: '/depositar'
+      fullPath: '/depositar'
+      preLoaderRoute: typeof AuthenticatedDepositarRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/credito': {
+      id: '/_authenticated/credito'
+      path: '/credito'
+      fullPath: '/credito'
+      preLoaderRoute: typeof AuthenticatedCreditoRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
+interface AuthenticatedRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedCreditoRoute: typeof AuthenticatedCreditoRoute
+  AuthenticatedDepositarRoute: typeof AuthenticatedDepositarRoute
+  AuthenticatedHistorialRoute: typeof AuthenticatedHistorialRoute
+  AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
+  AuthenticatedPerfilRoute: typeof AuthenticatedPerfilRoute
+  AuthenticatedRetirarRoute: typeof AuthenticatedRetirarRoute
+  AuthenticatedTarjetasRoute: typeof AuthenticatedTarjetasRoute
+  AuthenticatedTrabajadorPanelRoute: typeof AuthenticatedTrabajadorPanelRoute
+  AuthenticatedTransferirRoute: typeof AuthenticatedTransferirRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedCreditoRoute: AuthenticatedCreditoRoute,
+  AuthenticatedDepositarRoute: AuthenticatedDepositarRoute,
+  AuthenticatedHistorialRoute: AuthenticatedHistorialRoute,
+  AuthenticatedHomeRoute: AuthenticatedHomeRoute,
+  AuthenticatedPerfilRoute: AuthenticatedPerfilRoute,
+  AuthenticatedRetirarRoute: AuthenticatedRetirarRoute,
+  AuthenticatedTarjetasRoute: AuthenticatedTarjetasRoute,
+  AuthenticatedTrabajadorPanelRoute: AuthenticatedTrabajadorPanelRoute,
+  AuthenticatedTransferirRoute: AuthenticatedTransferirRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  AdminLoginRoute: AdminLoginRoute,
+  LoginRoute: LoginRoute,
+  TrabajadorLoginRoute: TrabajadorLoginRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
+  AuthCodeRoute: AuthCodeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
