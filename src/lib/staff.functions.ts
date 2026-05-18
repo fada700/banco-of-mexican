@@ -57,8 +57,18 @@ export const aprobarSolicitud = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
+    const { data: sol } = await supabaseAdmin.from("solicitudes").select("usuario_id").eq("id", data.id).single();
     const { error } = await context.supabase.rpc("aprobar_tarjeta_credito", { _solicitud_id: data.id });
     if (error) throw new Error(error.message);
+    if (sol?.usuario_id) {
+      await notify({
+        usuario_id: sol.usuario_id,
+        tipo: "credito_aprobado",
+        titulo: "✅ Tarjeta de crédito aprobada",
+        descripcion: "Tu solicitud fue aprobada. Ya puedes ver tu tarjeta en la app.",
+        color: 0x16a34a,
+      });
+    }
     return { ok: true };
   });
 
@@ -66,8 +76,18 @@ export const rechazarSolicitud = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
+    const { data: sol } = await supabaseAdmin.from("solicitudes").select("usuario_id").eq("id", data.id).single();
     const { error } = await context.supabase.rpc("rechazar_tarjeta_credito", { _solicitud_id: data.id });
     if (error) throw new Error(error.message);
+    if (sol?.usuario_id) {
+      await notify({
+        usuario_id: sol.usuario_id,
+        tipo: "credito_rechazado",
+        titulo: "❌ Tarjeta de crédito rechazada",
+        descripcion: "Tu solicitud fue rechazada. Puedes volver a solicitarla más adelante.",
+        color: 0xdc2626,
+      });
+    }
     return { ok: true };
   });
 
