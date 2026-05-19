@@ -9,6 +9,8 @@ import { getMe } from "@/lib/usuario.functions";
 import {
   listarSolicitudes, aprobarSolicitud, rechazarSolicitud,
   listarDeudores, ajustarLimite, condonarDeuda,
+  buscarUsuarios, congelarCuenta, descongelarCuenta, cerrarCuenta,
+  abrirDebitoManual, abrirCreditoManual,
 } from "@/lib/staff.functions";
 import { formatMXN } from "@/lib/format";
 
@@ -31,25 +33,37 @@ function TrabajadorPanelPage() {
   const fnDeudores = useServerFn(listarDeudores);
   const fnLimite = useServerFn(ajustarLimite);
   const fnCondonar = useServerFn(condonarDeuda);
+  const fnBuscar = useServerFn(buscarUsuarios);
+  const fnCongelar = useServerFn(congelarCuenta);
+  const fnDescongelar = useServerFn(descongelarCuenta);
+  const fnCerrar = useServerFn(cerrarCuenta);
+  const fnAbrirDebito = useServerFn(abrirDebitoManual);
+  const fnAbrirCredito = useServerFn(abrirCreditoManual);
 
   const { data: me, isLoading: meLoading } = useQuery({
-    queryKey: ["me"], queryFn: () => fetchMe(),
-    staleTime: 60_000,
+    queryKey: ["me"], queryFn: () => fetchMe(), staleTime: 60_000,
   });
   const isStaff = !!me && (me.roles.includes("admin") || me.roles.includes("trabajador"));
 
   const { data: sols } = useQuery({
     queryKey: ["sols"], queryFn: () => fnList(),
-    enabled: isStaff && isPwa === false,
-    staleTime: 30_000,
+    enabled: isStaff && isPwa === false, staleTime: 30_000,
   });
   const { data: deudores } = useQuery({
     queryKey: ["deudores"], queryFn: () => fnDeudores(),
-    enabled: isStaff && isPwa === false,
-    staleTime: 30_000,
+    enabled: isStaff && isPwa === false, staleTime: 30_000,
+  });
+
+  const [q, setQ] = useState("");
+  const { data: clientes } = useQuery({
+    queryKey: ["clientes", q], queryFn: () => fnBuscar({ data: { q } }),
+    enabled: isStaff && isPwa === false, staleTime: 15_000,
   });
 
   const [busy, setBusy] = useState(false);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [motivoCuenta, setMotivoCuenta] = useState("");
+  const [limiteNuevo, setLimiteNuevo] = useState("");
   const [editLimite, setEditLimite] = useState<Record<string, string>>({});
 
   const run = async (fn: () => Promise<unknown>, ok: string) => {
@@ -58,6 +72,7 @@ function TrabajadorPanelPage() {
       await fn(); toast.success(ok);
       qc.invalidateQueries({ queryKey: ["sols"] });
       qc.invalidateQueries({ queryKey: ["deudores"] });
+      qc.invalidateQueries({ queryKey: ["clientes"] });
     } catch (e) { toast.error((e as Error).message); }
     finally { setBusy(false); }
   };
@@ -73,7 +88,7 @@ function TrabajadorPanelPage() {
       <header className="container-app pt-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Panel trabajador</h1>
-          <p className="text-sm text-muted-foreground">Solicitudes y deudores</p>
+          <p className="text-sm text-muted-foreground">Clientes, solicitudes y deudores</p>
         </div>
         <div className="flex items-center gap-3">
           {me?.roles.includes("admin") && (
@@ -83,7 +98,65 @@ function TrabajadorPanelPage() {
         </div>
       </header>
 
+      {/* CLIENTES */}
       <section className="container-app mt-6">
+        <h2 className="text-base font-semibold mb-3">Clientes</h2>
+        <input value={q} onChange={(e) => setQ(e.target.value)}
+          placeholder="Nombre, número cliente o Discord ID"
+          className="w-full rounded-xl bg-surface border border-border px-3 py-3 text-sm" />
+        <div className="mt-3 rounded-2xl border border-border bg-surface divide-y divide-border">
+          {!clientes?.length && <div className="p-5 text-sm text-muted-foreground text-center">Sin resultados</div>}
+          {clientes?.map((u) => (
+            <div key={u.id} className="p-4">
+              <button onClick={() => setOpenId((id) => (id === u.id ? null : u.id))}
+                className="w-full flex justify-between items-baseline text-left">
+                <div>
+                  <div className="text-sm font-medium">{u.nombre}</div>
+                  <div className="text-xs text-muted-foreground font-mono">{u.numero_cliente} · {u.discord_id}</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-mono">{formatMXN(u.saldo_banco)}</div>
+                  <div className="text-[10px] text-muted-foreground">cartera {formatMXN(u.saldo_cartera)}</div>
+                </div>
+              </button>
+              {openId === u.id && (
+                <div className="mt-3 space-y-2 border-t border-border pt-3">
+                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Gestión de cuenta</div>
+                  <input placeholder="Motivo (opcional)" value={motivoCuenta}
+                    onChange={(e) => setMotivoCuenta(e.target.value)}
+                    className="w-full rounded-lg bg-background border border-border px-3 py-2 text-xs" />
+                  <div className="grid grid-cols-3 gap-2">
+                    <button disabled={busy}
+                      onClick={() => run(() => fnCongelar({ data: { usuario_id: u.id, motivo: motivoCuenta } }), "Cuenta congelada")}
+                      className="bmx-tap rounded-lg border border-border px-2 py-2 text-[11px] font-medium disabled:opacity-50">Congelar</button>
+                    <button disabled={busy}
+                      onClick={() => run(() => fnDescongelar({ data: { usuario_id: u.id, motivo: motivoCuenta } }), "Cuenta activa")}
+                      className="bmx-tap rounded-lg border border-border px-2 py-2 text-[11px] font-medium disabled:opacity-50">Descongelar</button>
+                    <button disabled={busy}
+                      onClick={() => run(() => fnCerrar({ data: { usuario_id: u.id, motivo: motivoCuenta } }), "Cuenta cerrada")}
+                      className="bmx-tap rounded-lg border border-destructive text-destructive px-2 py-2 text-[11px] font-medium disabled:opacity-50">Cerrar</button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button disabled={busy}
+                      onClick={() => run(() => fnAbrirDebito({ data: { usuario_id: u.id, motivo: motivoCuenta } }), "Débito emitido")}
+                      className="bmx-tap rounded-lg border border-border px-2 py-2 text-[11px] font-medium disabled:opacity-50">Emitir débito</button>
+                    <div className="flex gap-1">
+                      <input type="number" placeholder="Límite" value={limiteNuevo}
+                        onChange={(e) => setLimiteNuevo(e.target.value)}
+                        className="w-full rounded-lg bg-background border border-border px-2 text-[11px] font-mono" />
+                      <button disabled={busy || !limiteNuevo || Number(limiteNuevo) <= 0}
+                        onClick={() => run(() => fnAbrirCredito({ data: { usuario_id: u.id, limite: Number(limiteNuevo), motivo: motivoCuenta } }), "Crédito emitido")}
+                        className="bmx-tap rounded-lg border border-border px-2 py-2 text-[11px] font-medium disabled:opacity-50">Crédito</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="container-app mt-8">
         <h2 className="text-base font-semibold mb-3">Solicitudes pendientes</h2>
         <div className="rounded-2xl border border-border bg-surface divide-y divide-border">
           {!sols?.length && <div className="p-5 text-sm text-muted-foreground text-center">Sin solicitudes</div>}
