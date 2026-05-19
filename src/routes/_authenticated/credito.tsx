@@ -53,12 +53,16 @@ function CreditoPage() {
         <Link to="/tarjetas" className="text-xs text-muted-foreground underline">Volver</Link>
       </header>
 
-      {(!c || c.estado === "sin_solicitar" || c.estado === "rechazada") && (
+      {(!c || c.estado === "sin_solicitar" || c.estado === "rechazada" || c.estado === "cerrada") && (
         <section className="container-app mt-8">
           <div className="rounded-2xl border border-border bg-surface p-6 text-center">
-            <div className="text-base font-semibold">Solicita tu tarjeta de crédito</div>
+            <div className="text-base font-semibold">
+              {c?.estado === "cerrada" ? "Tu tarjeta fue cerrada" : "Solicita tu tarjeta de crédito"}
+            </div>
             <p className="text-sm text-muted-foreground mt-2">
-              Empezarás con un límite de {formatMXN(5000)}. Tu solicitud será revisada por un trabajador.
+              {c?.estado === "cerrada"
+                ? "Un trabajador cerró tu tarjeta anterior. Puedes solicitar una nueva y será revisada."
+                : `Empezarás con un límite de ${formatMXN(5000)}. Tu solicitud será revisada por un trabajador.`}
             </p>
             {c?.estado === "rechazada" && (
               <div className="mt-3 text-xs text-destructive">Tu última solicitud fue rechazada.</div>
@@ -79,6 +83,17 @@ function CreditoPage() {
           <div className="rounded-2xl border border-dashed border-border p-6 text-center">
             <div className="text-base font-semibold">Solicitud en revisión</div>
             <p className="text-sm text-muted-foreground mt-2">Un trabajador la revisará pronto.</p>
+          </div>
+        </section>
+      )}
+
+      {(c?.estado === "activa" || c?.estado === "bloqueada") && !c.numero && (
+        <section className="container-app mt-8">
+          <div className="rounded-2xl border border-border bg-surface p-6 text-center">
+            <div className="text-base font-semibold">Tarjeta en preparación</div>
+            <p className="text-sm text-muted-foreground mt-2">
+              Tu tarjeta fue aprobada pero aún no tiene número asignado. Contacta soporte.
+            </p>
           </div>
         </section>
       )}
