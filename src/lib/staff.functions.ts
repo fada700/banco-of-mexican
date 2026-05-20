@@ -340,6 +340,24 @@ export const descongelarCuenta = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const reabrirCuenta = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { usuario_id: string; motivo?: string }) =>
+    z.object({ usuario_id: z.string().uuid(), motivo: z.string().max(200).optional() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.rpc("reabrir_cuenta", {
+      _usuario_id: data.usuario_id, _motivo: data.motivo ?? "",
+    });
+    if (error) throw new Error(error.message);
+    await notify({
+      usuario_id: data.usuario_id, tipo: "cuenta_reabierta",
+      titulo: "✅ Cuenta reabierta",
+      descripcion: "Tu cuenta fue reactivada. Ya puedes operar normalmente.",
+      color: 0x16a34a,
+    });
+    return { ok: true };
+  });
+
 export const cerrarCuenta = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { usuario_id: string; motivo?: string }) =>
