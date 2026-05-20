@@ -37,6 +37,7 @@ function TrabajadorPanelPage() {
   const fnCongelar = useServerFn(congelarCuenta);
   const fnDescongelar = useServerFn(descongelarCuenta);
   const fnCerrar = useServerFn(cerrarCuenta);
+  const fnReabrir = useServerFn(reabrirCuenta);
   const fnAbrirDebito = useServerFn(abrirDebitoManual);
   const fnAbrirCredito = useServerFn(abrirCreditoManual);
 
