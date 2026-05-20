@@ -10,6 +10,7 @@ export interface UserData {
   saldo_cartera: number;
   saldo_banco: number;
   membresia: "basica" | "plus" | "black";
+  estado_cuenta: "activa" | "congelada" | "cerrada";
   discord_avatar_url: string | null;
   roles: string[];
   tarjeta_debito: {
