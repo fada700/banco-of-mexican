@@ -9,7 +9,7 @@ import { getMe } from "@/lib/usuario.functions";
 import {
   listarSolicitudes, aprobarSolicitud, rechazarSolicitud,
   listarDeudores, ajustarLimite, condonarDeuda,
-  buscarUsuarios, congelarCuenta, descongelarCuenta, cerrarCuenta,
+  buscarUsuarios, congelarCuenta, descongelarCuenta, cerrarCuenta, reabrirCuenta,
   abrirDebitoManual, abrirCreditoManual,
 } from "@/lib/staff.functions";
 import { formatMXN } from "@/lib/format";
