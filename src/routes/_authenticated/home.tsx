@@ -102,6 +102,16 @@ function HomePage() {
         </Link>
       </section>
 
+      {/* Accesos rápidos */}
+      <section className="container-app mt-5 grid grid-cols-2 gap-3">
+        <Link to="/tarjetas" className="bmx-tap rounded-2xl border border-border bg-surface py-3 text-sm font-medium text-center">
+          Mis tarjetas
+        </Link>
+        <Link to="/estado-cuenta" className="bmx-tap rounded-2xl border border-border bg-surface py-3 text-sm font-medium text-center">
+          Estado de cuenta
+        </Link>
+      </section>
+
       {/* Movimientos */}
       <section className="container-app mt-7">
         <div className="flex items-baseline justify-between">
