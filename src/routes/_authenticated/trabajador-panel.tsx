@@ -112,7 +112,14 @@ function TrabajadorPanelPage() {
               <button onClick={() => setOpenId((id) => (id === u.id ? null : u.id))}
                 className="w-full flex justify-between items-baseline text-left">
                 <div>
-                  <div className="text-sm font-medium">{u.nombre}</div>
+                  <div className="text-sm font-medium flex items-center gap-2">
+                    {u.nombre}
+                    <span className={`text-[9px] px-1.5 py-0.5 rounded uppercase tracking-wider font-semibold ${
+                      u.estado_cuenta === "activa" ? "bg-green-500/15 text-green-600" :
+                      u.estado_cuenta === "congelada" ? "bg-sky-500/15 text-sky-600" :
+                      "bg-destructive/15 text-destructive"
+                    }`}>{u.estado_cuenta}</span>
+                  </div>
                   <div className="text-xs text-muted-foreground font-mono">{u.numero_cliente} · {u.discord_id}</div>
                 </div>
                 <div className="text-right">
@@ -126,16 +133,27 @@ function TrabajadorPanelPage() {
                   <input placeholder="Motivo (opcional)" value={motivoCuenta}
                     onChange={(e) => setMotivoCuenta(e.target.value)}
                     className="w-full rounded-lg bg-background border border-border px-3 py-2 text-xs" />
-                  <div className="grid grid-cols-3 gap-2">
-                    <button disabled={busy}
-                      onClick={() => run(() => fnCongelar({ data: { usuario_id: u.id, motivo: motivoCuenta } }), "Cuenta congelada")}
-                      className="bmx-tap rounded-lg border border-border px-2 py-2 text-[11px] font-medium disabled:opacity-50">Congelar</button>
-                    <button disabled={busy}
-                      onClick={() => run(() => fnDescongelar({ data: { usuario_id: u.id, motivo: motivoCuenta } }), "Cuenta activa")}
-                      className="bmx-tap rounded-lg border border-border px-2 py-2 text-[11px] font-medium disabled:opacity-50">Descongelar</button>
-                    <button disabled={busy}
-                      onClick={() => run(() => fnCerrar({ data: { usuario_id: u.id, motivo: motivoCuenta } }), "Cuenta cerrada")}
-                      className="bmx-tap rounded-lg border border-destructive text-destructive px-2 py-2 text-[11px] font-medium disabled:opacity-50">Cerrar</button>
+                  <div className="grid grid-cols-2 gap-2">
+                    {u.estado_cuenta === "activa" && (
+                      <button disabled={busy}
+                        onClick={() => run(() => fnCongelar({ data: { usuario_id: u.id, motivo: motivoCuenta } }), "Cuenta congelada")}
+                        className="bmx-tap rounded-lg border border-border px-2 py-2 text-[11px] font-medium disabled:opacity-50">Congelar</button>
+                    )}
+                    {u.estado_cuenta === "congelada" && (
+                      <button disabled={busy}
+                        onClick={() => run(() => fnDescongelar({ data: { usuario_id: u.id, motivo: motivoCuenta } }), "Cuenta activa")}
+                        className="bmx-tap rounded-lg border border-border px-2 py-2 text-[11px] font-medium disabled:opacity-50">Descongelar</button>
+                    )}
+                    {u.estado_cuenta === "cerrada" && (
+                      <button disabled={busy}
+                        onClick={() => run(() => fnReabrir({ data: { usuario_id: u.id, motivo: motivoCuenta } }), "Cuenta reabierta")}
+                        className="bmx-tap rounded-lg border border-primary text-primary px-2 py-2 text-[11px] font-semibold disabled:opacity-50">Reabrir cuenta</button>
+                    )}
+                    {u.estado_cuenta !== "cerrada" && (
+                      <button disabled={busy}
+                        onClick={() => run(() => fnCerrar({ data: { usuario_id: u.id, motivo: motivoCuenta } }), "Cuenta cerrada")}
+                        className="bmx-tap rounded-lg border border-destructive text-destructive px-2 py-2 text-[11px] font-medium disabled:opacity-50">Cerrar</button>
+                    )}
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <button disabled={busy}
