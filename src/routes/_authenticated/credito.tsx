@@ -53,7 +53,20 @@ function CreditoPage() {
         <Link to="/tarjetas" className="text-xs text-muted-foreground underline">Volver</Link>
       </header>
 
-      {(!c || c.estado === "sin_solicitar" || c.estado === "rechazada" || c.estado === "cerrada") && (
+      {me?.estado_cuenta && me.estado_cuenta !== "activa" && (
+        <section className="container-app mt-8">
+          <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-6 text-center">
+            <div className="text-base font-semibold text-destructive">
+              Tu cuenta está {me.estado_cuenta}
+            </div>
+            <p className="text-sm text-muted-foreground mt-2">
+              No puedes solicitar ni usar tarjetas de crédito. Contacta a un trabajador para reactivar tu cuenta.
+            </p>
+          </div>
+        </section>
+      )}
+
+      {me?.estado_cuenta === "activa" && (!c || c.estado === "sin_solicitar" || c.estado === "rechazada" || c.estado === "cerrada") && (
         <section className="container-app mt-8">
           <div className="rounded-2xl border border-border bg-surface p-6 text-center">
             <div className="text-base font-semibold">

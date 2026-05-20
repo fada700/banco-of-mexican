@@ -10,6 +10,7 @@ export interface UserData {
   saldo_cartera: number;
   saldo_banco: number;
   membresia: "basica" | "plus" | "black";
+  estado_cuenta: "activa" | "congelada" | "cerrada";
   discord_avatar_url: string | null;
   roles: string[];
   tarjeta_debito: {
@@ -65,6 +66,7 @@ export const getMe = createServerFn({ method: "GET" })
       saldo_cartera: Number(usuario.saldo_cartera),
       saldo_banco: Number(usuario.saldo_banco),
       membresia: usuario.membresia,
+      estado_cuenta: (usuario as any).estado_cuenta ?? "activa",
       discord_avatar_url: usuario.discord_avatar_url,
       roles: (roles ?? []).map((r) => r.role),
       tarjeta_debito: tarjeta

@@ -9,6 +9,7 @@ export type TipoNotificacion =
   | "cuenta_congelada"
   | "cuenta_descongelada"
   | "cuenta_cerrada"
+  | "cuenta_reabierta"
   | "credito_aprobado"
   | "credito_rechazado";
 

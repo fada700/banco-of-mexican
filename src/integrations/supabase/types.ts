@@ -557,6 +557,10 @@ export type Database = {
         Returns: Json
       }
       pagar_credito: { Args: { _monto: number }; Returns: Json }
+      reabrir_cuenta: {
+        Args: { _motivo: string; _usuario_id: string }
+        Returns: undefined
+      }
       rechazar_tarjeta_credito: {
         Args: { _solicitud_id: string }
         Returns: undefined
