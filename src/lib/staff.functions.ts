@@ -207,6 +207,7 @@ export interface UsuarioBusquedaRow {
   saldo_banco: number;
   saldo_cartera: number;
   membresia: string;
+  estado_cuenta: "activa" | "congelada" | "cerrada";
 }
 
 export const buscarUsuarios = createServerFn({ method: "GET" })
@@ -219,7 +220,7 @@ export const buscarUsuarios = createServerFn({ method: "GET" })
     const q = (data.q ?? "").trim();
     let query = supabaseAdmin
       .from("usuarios")
-      .select("id, nombre, numero_cliente, discord_id, saldo_banco, saldo_cartera, membresia")
+      .select("id, nombre, numero_cliente, discord_id, saldo_banco, saldo_cartera, membresia, estado_cuenta")
       .order("nombre", { ascending: true })
       .limit(40);
     if (q.length > 0) {
@@ -237,6 +238,7 @@ export const buscarUsuarios = createServerFn({ method: "GET" })
       saldo_banco: Number(r.saldo_banco),
       saldo_cartera: Number(r.saldo_cartera),
       membresia: r.membresia as string,
+      estado_cuenta: r.estado_cuenta as "activa" | "congelada" | "cerrada",
     }));
   });
 
