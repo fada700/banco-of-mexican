@@ -147,11 +147,18 @@ function AdminPage() {
             <div key={u.id} className="p-4">
               <button onClick={() => setOpenId((id) => (id === u.id ? null : u.id))}
                 className="w-full flex justify-between items-baseline text-left">
-                <div>
-                  <div className="text-sm font-medium">{u.nombre}</div>
-                  <div className="text-xs text-muted-foreground font-mono">{u.numero_cliente} · {u.discord_id}</div>
+                <div className="min-w-0">
+                  <div className="text-sm font-medium flex items-center gap-2">
+                    {u.nombre}
+                    <span className={`text-[9px] px-1.5 py-0.5 rounded uppercase tracking-wider ${
+                      u.estado_cuenta === "activa" ? "bg-emerald-500/10 text-emerald-500" :
+                      u.estado_cuenta === "congelada" ? "bg-sky-500/10 text-sky-500" :
+                      "bg-destructive/10 text-destructive"
+                    }`}>{u.estado_cuenta}</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground font-mono truncate">{u.numero_cliente} · {u.discord_id}</div>
                 </div>
-                <div className="text-right">
+                <div className="text-right shrink-0 ml-2">
                   <div className="text-sm font-mono">{formatMXN(u.saldo_banco)}</div>
                   <div className="text-[10px] text-muted-foreground">cartera {formatMXN(u.saldo_cartera)}</div>
                 </div>
