@@ -8,8 +8,8 @@ import { useIsPwa } from "@/hooks/use-is-pwa";
 import { getMe } from "@/lib/usuario.functions";
 import {
   buscarUsuarios, adminAjustarSaldo, getGanancias, setDueno, listarCreditos,
-  congelarCuenta, descongelarCuenta, cerrarCuenta, abrirDebitoManual, abrirCreditoManual,
-  listarAuditLogs,
+  congelarCuenta, descongelarCuenta, cerrarCuenta, reabrirCuenta,
+  abrirDebitoManual, abrirCreditoManual, listarAuditLogs,
 } from "@/lib/staff.functions";
 import { formatMXN } from "@/lib/format";
 import { PwaBlocked, NoAccess } from "./trabajador-panel";
