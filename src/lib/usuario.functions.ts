@@ -106,7 +106,7 @@ export const getMe = createServerFn({ method: "GET" })
       membresia: usuario.membresia,
       estado_cuenta: (usuario as any).estado_cuenta ?? "activa",
       discord_avatar_url: usuario.discord_avatar_url,
-      roles: (roles ?? []).map((r) => r.role),
+      roles,
       tarjeta_debito: tarjeta
         ? {
             numero: tarjeta.numero,
