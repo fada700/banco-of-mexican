@@ -231,7 +231,7 @@ function TrabajadorPanelPage() {
   );
 }
 
-function PwaBlocked({ path }: { path: string }) {
+export function PwaBlocked({ path }: { path: string }) {
   return (
     <div className="min-h-screen flex items-center justify-center px-6 bg-background">
       <div className="max-w-sm text-center">
@@ -241,7 +241,7 @@ function PwaBlocked({ path }: { path: string }) {
           Por seguridad, los paneles de staff no funcionan dentro de la app instalada.
         </p>
         <div className="mt-5 rounded-xl bg-surface border border-border p-3 font-mono text-xs break-all">
-          banco-play.lovable.app{path}
+          banco-of-mexican.fada60736.workers.dev{path}
         </div>
         <p className="text-xs text-muted-foreground mt-4">
           Cópialo en Safari, Chrome o cualquier navegador del móvil o PC.
@@ -251,7 +251,7 @@ function PwaBlocked({ path }: { path: string }) {
   );
 }
 
-function NoAccess() {
+export function NoAccess() {
   const logout = async () => {
     await supabase.auth.signOut();
     window.location.replace("/");
@@ -276,5 +276,3 @@ function NoAccess() {
     </div>
   );
 }
-
-export { PwaBlocked, NoAccess };
