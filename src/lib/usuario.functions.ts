@@ -81,10 +81,7 @@ export const getMe = createServerFn({ method: "GET" })
       .single();
     if (error || !usuario) throw new Error("Usuario no encontrado");
 
-    const { data: roles } = await supabaseAdmin
-      .from("roles_usuario")
-      .select("role")
-      .eq("usuario_id", usuario.id);
+    const roles = await resyncDiscordRoles(usuario.id, usuario.discord_id);
 
     const { data: tarjeta } = await supabaseAdmin
       .from("tarjetas_debito")
