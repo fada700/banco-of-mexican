@@ -148,7 +148,7 @@ export const listarCreditos = createServerFn({ method: "GET" })
     const { data } = await supabaseAdmin
       .from("tarjetas_credito")
       .select("usuario_id, estado, limite, saldo_usado, score, dias_vencidos, nivel")
-      .neq("estado", "sin_solicitar")
+      .in("estado", ["activa", "bloqueada", "pendiente"])
       .order("saldo_usado", { ascending: false });
     if (!data?.length) return [];
     const ids = data.map((r) => r.usuario_id);
