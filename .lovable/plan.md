@@ -1,163 +1,86 @@
 
-# Plan de implementación
+# Plan: MDT + Sueldos + Impuestos + Membresías 7 niveles
 
-Cambios grandes en 5 frentes. Lo divido en fases para ejecutar de abajo hacia arriba (DB → backend → frontend), tal como pediste.
+## Decisiones confirmadas
+- Reemplazar membresías viejas (basica/plus/black) por 7 nuevas, todos migran a `basica`.
+- Nuevo rol Discord `policia` para MDT.
+- Sueldos configurables por rol Discord.
+- Impuestos cada 6 días, % sobre `saldo_banco`. Si no alcanza → queda deuda (`impuestos_pendientes`) que se cobra del próximo ingreso.
 
----
+## Lo que necesito de ti antes de implementar
+1. **ROLE_ID_POLICIA** (Discord role ID para el rol de policía).
+2. **7 Role IDs de Discord** para las membresías: Básica, Gold, Zafiro, Esmeralda, Diamond, Ruby, Ruby+. (Si no los tienes aún, los puedo dejar configurables desde tabla `config_membresias` y los agregas luego.)
+3. **Tasa de impuestos**: ¿fijo 20%, o variable según membresía? (Sugiero variable: Básica 25%, Gold 22%, Zafiro 20%, Esmeralda 18%, Diamond 15%, Ruby 12%, Ruby+ 10%.)
+4. **Tabla de sueldos por rol**: dime cuánto cobra `policia`, `trabajador`, `admin` y cada cuántos días. (Sugiero: policia 50,000 c/7d; trabajador 75,000 c/7d; admin 0 — confírmame.)
 
-## Fase 1 — Base de datos (migraciones)
+## Cambios de BD (migración)
 
-### 1.1 Nuevas tablas
+### Enums nuevos
+- `tipo_membresia` → reemplazar valores: `basica, gold, zafiro, esmeralda, diamond, ruby, ruby_plus`
+- Nuevo en `app_role`: agregar `policia`
+- Nuevo `tipo_movimiento`: `multa, pago_multa, sueldo, impuesto, compra_membresia`
+- Nuevo `estado_multa`: `pendiente, pagada, cancelada`
 
-- **`audit_logs`**
-  - `id`, `realizado_por_id` (uuid), `realizado_por_nombre`, `realizado_por_rol`
-  - `accion` (text: `CONGELAR_CUENTA`, `DESCONGELAR_CUENTA`, `CERRAR_CUENTA`, `ABRIR_DEBITO`, `ABRIR_CREDITO`, `AJUSTAR_SALDO`, `APROBAR_CREDITO`, `RECHAZAR_CREDITO`, `AJUSTAR_LIMITE`, `CONDONAR_DEUDA`, `CAMBIAR_ROL`, `SET_DUENO`)
-  - `entidad`, `entidad_id`, `cliente_nombre`
-  - `detalle` (jsonb con antes/después/motivo/monto)
-  - `ip_address` (text, opcional)
-  - `fecha_hora` (timestamptz)
-  - RLS: SELECT solo admin. INSERT/UPDATE/DELETE bloqueados desde cliente (solo se escribe vía `SECURITY DEFINER`).
-  - Índices: `realizado_por_id`, `fecha_hora`, `entidad_id`.
+### Tablas nuevas
+- **`config_membresias`** (1 fila por nivel): `tipo`, `costo`, `tx_diarias`, `tx_grandes_diarias`, `monto_grande`, `debito_max`, `cartera_max`, `credito_max`, `seguridad_antihackeo_pct`, `seguro_dinero_pct`, `nivel_soporte`, `role_id_discord`, `impuesto_pct`
+- **`multas`**: `id`, `usuario_id`, `policia_id`, `monto`, `motivo`, `estado` (pendiente/pagada/cancelada), `fecha_emision`, `fecha_pago`
+- **`config_sueldos`**: `role` (app_role), `monto`, `dias_periodo`
+- **`sueldos_reclamados`**: `id`, `usuario_id`, `role`, `monto`, `fecha`
+- Columnas nuevas en `usuarios`: `impuestos_pendientes numeric default 0`, `ultimo_impuesto_en timestamptz`
 
-- **`notification_log`**
-  - `id`, `usuario_id`, `discord_user_id`, `tipo_notificacion`, `mensaje` (text), `estado` (`enviado` | `fallido`), `error` (text null), `enviado_en`.
-  - RLS: usuario ve las suyas; admin ve todas.
-  - Índices: `usuario_id`, `enviado_en`.
+### Funciones nuevas
+- `emitir_multa(_usuario_id, _monto, _motivo)` — solo policia/admin
+- `pagar_multa(_multa_id)` — usuario; saldo_banco → ganancias_banco (gobierno)
+- `cancelar_multa(_multa_id)` — policia/admin
+- `reclamar_sueldo()` — usuario; verifica rol + periodo, descuenta de ganancias_banco; si no hay fondos → error "Gobierno sin fondos"
+- `comprar_membresia(_tipo)` — descuenta costo de saldo_banco, envía al dueño, actualiza membresía, dispara notificación con role Discord a agregar
+- `cobrar_impuestos_tick()` — itera usuarios activos; si `now() - ultimo_impuesto_en >= 6d`: monto = saldo_banco * pct; descuenta lo que pueda; resto a `impuestos_pendientes`; lo cobrado va a `ganancias_banco`
+- Trigger en `movimientos` (o llamado desde transferencia/depósito): si usuario tiene `impuestos_pendientes > 0` y le entra dinero, se descuenta primero.
 
-### 1.2 Cambios en tablas existentes
+### Cron
+- `/api/public/cron-impuestos` cada 24h llamando `cobrar_impuestos_tick()`. Programado vía `pg_cron`.
 
-- `usuarios`: añadir `estado_cuenta` enum (`activa`, `congelada`, `cerrada`) default `activa`.
-- `tarjetas_debito`: añadir `estado` enum (`activa`, `congelada`, `cerrada`) — la columna `congelada` actual se mantiene por compatibilidad pero el estado canónico pasa a ser `estado`.
-- `tarjetas_credito`: ya tiene `estado` — añadir valor `cerrada` al enum.
-- Añadir `clabe` (text, 18 dígitos) en `usuarios`, generada automáticamente al registrar (trigger).
-- `tarjetas_credito`: añadir `fecha_corte` (timestamptz) calculada al usar crédito.
+### Limites de transacción
+- Función `check_limite_transaccion(_usuario_id, _monto)` validada en `op_transferir`, `op_retirar`, etc. Cuenta tx del día, valida vs membresía.
 
-### 1.3 Constraints e índices
+## Cambios frontend
+- **`/_authenticated/mdt`** (nueva, solo policia/admin): emitir multa, lista de multas pendientes, recordatorio (DM Discord), historial.
+- **`/_authenticated/perfil`**: agregar tarjeta "Reclamar sueldo" con countdown al siguiente cobro.
+- **`/_authenticated/membresias`** (nueva): grid con los 7 niveles, botón Comprar (descuenta del banco, asigna rol Discord, DM).
+- **`/_authenticated/home`**: mostrar `impuestos_pendientes` si > 0, próxima fecha de cobro, multas pendientes.
+- **`/_authenticated/admin`**: panel para configurar sueldos, costos de membresía, % impuesto por nivel.
+- **`/_authenticated/trabajador-panel`**: ver multas emitidas, marcar pagadas manualmente.
+- Tarjeta débito/crédito cambia estética según membresía (gradiente por nivel).
 
-- `CHECK (saldo_banco >= 0)` y `CHECK (saldo_cartera >= 0)` en `usuarios`.
-- Índices: `movimientos(usuario_id)`, `movimientos(fecha)`, `audit_logs(realizado_por_id)`, `audit_logs(fecha_hora)`, `notification_log(usuario_id)`.
+## Notificaciones Discord (DM)
+- Multa emitida / recordatorio cada 48h si pendiente
+- Sueldo reclamado
+- Impuesto cobrado / deuda generada
+- Membresía comprada (+ otorgar rol Discord vía bot)
+- Gobierno sin fondos (al policia/admin que intentó pagar sueldo)
 
-### 1.4 Funciones nuevas / actualizadas (todas `SECURITY DEFINER` con check de rol)
+## Roles Discord — sync
+- Extender `resyncDiscordRoles` para incluir `policia` y mapear rol Discord ↔ membresía.
+- Al comprar membresía: llamar a Discord API `PUT /guilds/{guild}/members/{user}/roles/{role}` para asignar; remover el anterior.
 
-- `log_audit(...)` helper interno.
-- `congelar_cuenta(_usuario_id, _motivo)` → cambia `estado_cuenta` + escribe audit.
-- `descongelar_cuenta(_usuario_id, _motivo)`.
-- `cerrar_cuenta(_usuario_id, _motivo)` → marca usuario y tarjetas como `cerrada`, bloquea operaciones futuras.
-- `abrir_tarjeta_debito_manual(_usuario_id, _motivo)`, `abrir_tarjeta_credito_manual(_usuario_id, _limite, _motivo)`.
-- Modificar `op_depositar`, `op_retirar`, `op_transferir`, `usar_credito`, `pagar_credito` para **rechazar** si `estado_cuenta` ≠ `activa`. Ya son atómicas.
-- Modificar `admin_ajustar_saldo`, `aprobar_tarjeta_credito`, `rechazar_tarjeta_credito`, `ajustar_limite_credito`, `condonar_deuda` para llamar `log_audit`.
-- Trigger en `usuarios` que llene `clabe` (18 dígitos) en INSERT.
+## Orden de implementación
+1. Migración BD (enums, tablas, funciones, seed `config_membresias` y `config_sueldos`).
+2. Secrets: `ROLE_ID_POLICIA` + role IDs membresías (si los tienes).
+3. Backend: server functions (`mdt.functions.ts`, `sueldos.functions.ts`, `membresias.functions.ts`, `impuestos.server.ts`).
+4. Cron job impuestos.
+5. UI: rutas nuevas + integración en home/perfil/admin.
+6. Discord role sync extendido.
+7. QA: probar emisión multa → pago → ganancia banco; reclamar sueldo con/sin fondos; cobro impuesto con deuda; comprar membresía → cambio rol + estética.
 
-### 1.5 RLS
-
-Revisar todas las tablas y endurecer:
-- `usuarios`, `movimientos`, `tarjetas_debito`, `tarjetas_credito`, `solicitudes`, `membresias`, `ganancias_banco`, `config`, `roles_usuario` ya tienen RLS — verificar y completar políticas faltantes (INSERT/UPDATE/DELETE explícitas) y añadir las de las dos tablas nuevas.
-
----
-
-## Fase 2 — Backend (server functions)
-
-### 2.1 Notificaciones Discord (`src/lib/notifications.server.ts`)
-
-- `sendDiscordDM(discord_user_id, mensaje)` usando `DISCORD_BOT_TOKEN` (ya existe). Flujo: `POST /users/@me/channels` para abrir DM → `POST /channels/{id}/messages`.
-- Wrapper `notify(usuario_id, tipo, mensaje)` que envía + registra en `notification_log`.
-- Disparadores invocados desde server functions tras éxito de:
-  - `op_depositar`, `op_retirar`, `op_transferir` (origen y destino), `usar_credito`, `pagar_credito`
-  - `aprobar_tarjeta_credito`, `rechazar_tarjeta_credito`
-  - `congelar_cuenta`, `cerrar_cuenta`
-
-### 2.2 Recordatorios de pago de crédito (7 días / 1 día)
-
-- Nuevo endpoint público `src/routes/api/public/cron-credit-reminders.ts` que escanea tarjetas con `fecha_limite_pago` entre hoy+1 y hoy+7 y envía DM. Protegido con header `X-Cron-Secret` (nuevo secreto `CRON_SECRET` — **te diré que lo añadas tú**).
-- pg_cron lo invoca cada día (o el usuario lo programa donde quiera).
-
-### 2.3 Nuevas server functions de staff (`src/lib/staff.functions.ts`)
-
-- `listarClientes({ q, page })` con paginación.
-- `getClienteDetalle(usuario_id)` → perfil, tarjetas, últimas 10 transacciones.
-- `congelarCuenta`, `descongelarCuenta`, `cerrarCuenta`, `abrirDebito`, `abrirCredito` (cada una pide `motivo`).
-- `listarMorosos` (mejora del actual `listarDeudores` con `dias_vencidos` y % utilizado).
-
-### 2.4 Server functions de admin
-
-- `listarAuditLogs({ filtros, page })` con paginación 50/pág.
-- `exportarAuditCSV(filtros)` → devuelve string CSV.
-
-### 2.5 Estado de cuenta + PDF
-
-- `getEstadoCuenta({ desde, hasta, tipo?, tarjeta? })` → resumen + movimientos con saldo acumulado calculado.
-- PDF se genera **en el cliente** con `jsPDF` + `jspdf-autotable` (evita pesados PDF en el Worker). Componente que toma los datos del server function y produce el PDF.
+## Riesgo / advertencias
+- **Reemplazar enum `tipo_membresia`** rompe queries existentes; toca migrar todas las filas a `basica` antes y actualizar `types.ts` (auto).
+- Si **no me pasas los role IDs ahora**, los dejo `NULL` en `config_membresias` y la asignación de roles Discord queda inactiva hasta que los cargues desde el panel admin.
+- ~1000 usuarios × impuestos cada 6d = batch de hasta 1000 updates por tick; lo haré en un solo SQL atómico (`UPDATE ... FROM ...`) para que sea eficiente.
 
 ---
 
-## Fase 3 — Frontend
-
-### 3.1 PWA (manifest-only, sin service worker)
-
-- `public/manifest.json` ya existe. Añadir `<link rel="manifest">`, meta tags de Apple (`apple-mobile-web-app-capable`, `apple-touch-icon`) en `__root.tsx`.
-- Sin `vite-plugin-pwa` ni service workers (regla Lovable: rompen el preview).
-- Funciona como "Add to Home Screen" en iOS y Android.
-
-### 3.2 Estado de cuenta (usuario)
-
-- Nueva ruta `/_authenticated/estado-cuenta.tsx`.
-- Filtros: rango fechas, tipo, tarjeta. Tabla con saldo después.
-- Botón "Descargar PDF": logo, datos cliente, tabla, saldo final. Para crédito incluye fecha límite, pago mínimo (5% saldo_usado), total.
-- Link desde `home.tsx`.
-
-### 3.3 Rediseño panel trabajador
-
-Reescribir `_authenticated/trabajador-panel.tsx` con estética banca corporativa:
-- Paleta navy/grafito (tokens nuevos en `styles.css`).
-- Tabs: **Clientes** | **Solicitudes** | **Morosos**.
-- **Clientes**: tabla paginada + buscador → click abre `Sheet` (drawer) con perfil, ambas tarjetas, últimas 10 tx y botones de acción. Cada acción abre modal pidiendo motivo. "Cerrar cuenta" pide escribir `CONFIRMAR`.
-- **Solicitudes** y **Morosos**: mantienen lógica, rediseñadas a la nueva estética.
-
-### 3.4 Panel admin — Auditoría
-
-- Nueva tab/sección en `_authenticated/admin.tsx`: "Auditoría".
-- Tabla paginada (50/pág), filtros (trabajador, acción, fechas, cliente), filas expandibles con JSON, botón "Exportar CSV".
-- Solo lectura (no botones de editar/borrar).
-
-### 3.5 Seguridad de rutas
-
-- `_authenticated.tsx` ya gatea sesión. Añadir guard de rol:
-  - `/admin` → solo `admin`.
-  - `/trabajador-panel` → `admin` o `trabajador`.
-  - Cliente sin rol staff que intente entrar → redirect a `/home`.
-
----
-
-## Fase 4 — Cosas que tú debes hacer manualmente
-
-Te las listo al final del trabajo. Adelanto:
-
-1. **Añadir secreto `CRON_SECRET`** (string aleatorio largo) en Cloud → Secrets, para proteger el cron de recordatorios.
-2. **Programar el cron** (pg_cron o servicio externo) que llame `POST https://banco-of-mexican.lovable.app/api/public/cron-credit-reminders` con header `X-Cron-Secret: <valor>` una vez al día.
-3. Verificar que el bot de Discord tenga permiso de **enviar DMs** y esté en el servidor con los miembros visibles.
-
----
-
-## Detalles técnicos relevantes
-
-- **Stack**: TanStack Start + Supabase (Lovable Cloud). Server functions vía `createServerFn`, server routes para webhooks/cron.
-- **Atomicidad**: Las operaciones financieras siguen vía RPC PostgreSQL (`op_*`) con `SELECT ... FOR UPDATE`, lo que ya garantiza rollback en error.
-- **`SECURITY DEFINER`**: todas las funciones nuevas validan rol con `has_role()` antes de actuar.
-- **PDF**: cliente con `jsPDF` (peso aceptable, evita issues de Workers).
-- **CLABE**: generada `'6461801'` (prefijo BANCO) + 11 dígitos aleatorios = 18 dígitos, único por usuario.
-- **Notificación Discord**: si falla el DM (usuario bloqueó DMs), se registra `estado='fallido'` con `error`, no rompe la transacción.
-- **Pago mínimo crédito**: 5% del `saldo_usado` (configurable más tarde si quieres otro %).
-
----
-
-## Orden de ejecución
-
-1. Migración SQL completa (Fase 1).
-2. Server functions + Discord notifier + cron route (Fase 2).
-3. PWA meta tags + estado de cuenta + PDF (Fase 3.1–3.2).
-4. Rediseño trabajador (Fase 3.3).
-5. Auditoría admin (Fase 3.4).
-6. Guards de ruta por rol (Fase 3.5).
-7. Te paso checklist de secretos/cron pendientes.
-
-¿Apruebas? Si quieres ajustar algo (p. ej. % de pago mínimo, prefijo CLABE, omitir alguna sección), dímelo antes de arrancar.
+**Antes de ejecutar dime:**
+- `ROLE_ID_POLICIA` =
+- Role IDs membresías (o "déjalos NULL")
+- Tasa impuestos (fija 20% o por nivel como sugerí)
+- Sueldos (acepto mi sugerencia o dame tus valores)
