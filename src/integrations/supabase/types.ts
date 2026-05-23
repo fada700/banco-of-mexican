@@ -443,6 +443,7 @@ export type Database = {
           estado_cuenta: Database["public"]["Enums"]["estado_cuenta_general"]
           fecha_registro: string
           id: string
+          impuestos_pendientes: number
           intentos_fallidos: number
           membresia: Database["public"]["Enums"]["tipo_membresia"]
           nip_hash: string | null
@@ -450,6 +451,7 @@ export type Database = {
           numero_cliente: string
           saldo_banco: number
           saldo_cartera: number
+          ultimo_impuesto_en: string | null
         }
         Insert: {
           auth_user_id?: string | null
@@ -461,6 +463,7 @@ export type Database = {
           estado_cuenta?: Database["public"]["Enums"]["estado_cuenta_general"]
           fecha_registro?: string
           id?: string
+          impuestos_pendientes?: number
           intentos_fallidos?: number
           membresia?: Database["public"]["Enums"]["tipo_membresia"]
           nip_hash?: string | null
@@ -468,6 +471,7 @@ export type Database = {
           numero_cliente: string
           saldo_banco?: number
           saldo_cartera?: number
+          ultimo_impuesto_en?: string | null
         }
         Update: {
           auth_user_id?: string | null
@@ -479,6 +483,7 @@ export type Database = {
           estado_cuenta?: Database["public"]["Enums"]["estado_cuenta_general"]
           fecha_registro?: string
           id?: string
+          impuestos_pendientes?: number
           intentos_fallidos?: number
           membresia?: Database["public"]["Enums"]["tipo_membresia"]
           nip_hash?: string | null
@@ -486,6 +491,7 @@ export type Database = {
           numero_cliente?: string
           saldo_banco?: number
           saldo_cartera?: number
+          ultimo_impuesto_en?: string | null
         }
         Relationships: []
       }
@@ -575,7 +581,7 @@ export type Database = {
       usar_credito: { Args: { _monto: number }; Returns: undefined }
     }
     Enums: {
-      app_role: "admin" | "trabajador" | "usuario"
+      app_role: "admin" | "trabajador" | "usuario" | "policia"
       estado_credito:
         | "sin_solicitar"
         | "pendiente"
@@ -584,10 +590,18 @@ export type Database = {
         | "rechazada"
         | "cerrada"
       estado_cuenta_general: "activa" | "congelada" | "cerrada"
+      estado_multa: "pendiente" | "pagada" | "cancelada"
       estado_notificacion: "enviado" | "fallido"
       estado_solicitud: "pendiente" | "aprobada" | "rechazada"
       estado_tarjeta_debito: "activa" | "congelada" | "cerrada"
-      tipo_membresia: "basica" | "plus" | "black"
+      tipo_membresia:
+        | "basica"
+        | "gold"
+        | "zafiro"
+        | "esmeralda"
+        | "diamond"
+        | "ruby"
+        | "ruby_plus"
       tipo_movimiento:
         | "deposito"
         | "retiro"
@@ -602,6 +616,11 @@ export type Database = {
         | "admin_quitar"
         | "condonacion"
         | "ganancia_banco"
+        | "multa"
+        | "pago_multa"
+        | "sueldo"
+        | "impuesto"
+        | "compra_membresia"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -729,7 +748,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "trabajador", "usuario"],
+      app_role: ["admin", "trabajador", "usuario", "policia"],
       estado_credito: [
         "sin_solicitar",
         "pendiente",
@@ -739,10 +758,19 @@ export const Constants = {
         "cerrada",
       ],
       estado_cuenta_general: ["activa", "congelada", "cerrada"],
+      estado_multa: ["pendiente", "pagada", "cancelada"],
       estado_notificacion: ["enviado", "fallido"],
       estado_solicitud: ["pendiente", "aprobada", "rechazada"],
       estado_tarjeta_debito: ["activa", "congelada", "cerrada"],
-      tipo_membresia: ["basica", "plus", "black"],
+      tipo_membresia: [
+        "basica",
+        "gold",
+        "zafiro",
+        "esmeralda",
+        "diamond",
+        "ruby",
+        "ruby_plus",
+      ],
       tipo_movimiento: [
         "deposito",
         "retiro",
@@ -757,6 +785,11 @@ export const Constants = {
         "admin_quitar",
         "condonacion",
         "ganancia_banco",
+        "multa",
+        "pago_multa",
+        "sueldo",
+        "impuesto",
+        "compra_membresia",
       ],
     },
   },
