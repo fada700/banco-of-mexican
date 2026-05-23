@@ -50,7 +50,7 @@ export interface UserData {
   numero_cliente: string;
   saldo_cartera: number;
   saldo_banco: number;
-  membresia: "basica" | "plus" | "black";
+  membresia: "basica" | "gold" | "zafiro" | "esmeralda" | "diamond" | "ruby" | "ruby_plus";
   estado_cuenta: "activa" | "congelada" | "cerrada";
   discord_avatar_url: string | null;
   roles: string[];
