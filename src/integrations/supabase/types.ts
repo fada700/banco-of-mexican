@@ -83,6 +83,78 @@ export type Database = {
         }
         Relationships: []
       }
+      config_membresias: {
+        Row: {
+          cartera_max: number
+          costo: number
+          credito_max: number
+          debito_max: number
+          impuesto_pct: number
+          monto_grande: number
+          nivel_soporte: string
+          orden: number
+          role_id_discord: string | null
+          seguridad_antihackeo_pct: number
+          seguro_dinero_pct: number
+          tipo: Database["public"]["Enums"]["tipo_membresia"]
+          tx_diarias: number
+          tx_grandes_diarias: number
+        }
+        Insert: {
+          cartera_max?: number
+          costo?: number
+          credito_max?: number
+          debito_max?: number
+          impuesto_pct?: number
+          monto_grande?: number
+          nivel_soporte?: string
+          orden?: number
+          role_id_discord?: string | null
+          seguridad_antihackeo_pct?: number
+          seguro_dinero_pct?: number
+          tipo: Database["public"]["Enums"]["tipo_membresia"]
+          tx_diarias?: number
+          tx_grandes_diarias?: number
+        }
+        Update: {
+          cartera_max?: number
+          costo?: number
+          credito_max?: number
+          debito_max?: number
+          impuesto_pct?: number
+          monto_grande?: number
+          nivel_soporte?: string
+          orden?: number
+          role_id_discord?: string | null
+          seguridad_antihackeo_pct?: number
+          seguro_dinero_pct?: number
+          tipo?: Database["public"]["Enums"]["tipo_membresia"]
+          tx_diarias?: number
+          tx_grandes_diarias?: number
+        }
+        Relationships: []
+      }
+      config_sueldos: {
+        Row: {
+          activo: boolean
+          dias_periodo: number
+          monto: number
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Insert: {
+          activo?: boolean
+          dias_periodo?: number
+          monto?: number
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Update: {
+          activo?: boolean
+          dias_periodo?: number
+          monto?: number
+          role?: Database["public"]["Enums"]["app_role"]
+        }
+        Relationships: []
+      }
       ganancias_banco: {
         Row: {
           concepto: string
@@ -225,6 +297,42 @@ export type Database = {
           },
         ]
       }
+      multas: {
+        Row: {
+          estado: Database["public"]["Enums"]["estado_multa"]
+          fecha_emision: string
+          fecha_pago: string | null
+          id: string
+          monto: number
+          motivo: string
+          policia_id: string | null
+          ultimo_recordatorio: string | null
+          usuario_id: string
+        }
+        Insert: {
+          estado?: Database["public"]["Enums"]["estado_multa"]
+          fecha_emision?: string
+          fecha_pago?: string | null
+          id?: string
+          monto: number
+          motivo: string
+          policia_id?: string | null
+          ultimo_recordatorio?: string | null
+          usuario_id: string
+        }
+        Update: {
+          estado?: Database["public"]["Enums"]["estado_multa"]
+          fecha_emision?: string
+          fecha_pago?: string | null
+          id?: string
+          monto?: number
+          motivo?: string
+          policia_id?: string | null
+          ultimo_recordatorio?: string | null
+          usuario_id?: string
+        }
+        Relationships: []
+      }
       notification_log: {
         Row: {
           discord_user_id: string | null
@@ -328,6 +436,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      sueldos_reclamados: {
+        Row: {
+          fecha: string
+          id: string
+          monto: number
+          role: Database["public"]["Enums"]["app_role"]
+          usuario_id: string
+        }
+        Insert: {
+          fecha?: string
+          id?: string
+          monto: number
+          role: Database["public"]["Enums"]["app_role"]
+          usuario_id: string
+        }
+        Update: {
+          fecha?: string
+          id?: string
+          monto?: number
+          role?: Database["public"]["Enums"]["app_role"]
+          usuario_id?: string
+        }
+        Relationships: []
       }
       tarjetas_credito: {
         Row: {
@@ -443,6 +575,7 @@ export type Database = {
           estado_cuenta: Database["public"]["Enums"]["estado_cuenta_general"]
           fecha_registro: string
           id: string
+          impuestos_pendientes: number
           intentos_fallidos: number
           membresia: Database["public"]["Enums"]["tipo_membresia"]
           nip_hash: string | null
@@ -450,6 +583,7 @@ export type Database = {
           numero_cliente: string
           saldo_banco: number
           saldo_cartera: number
+          ultimo_impuesto_en: string | null
         }
         Insert: {
           auth_user_id?: string | null
@@ -461,6 +595,7 @@ export type Database = {
           estado_cuenta?: Database["public"]["Enums"]["estado_cuenta_general"]
           fecha_registro?: string
           id?: string
+          impuestos_pendientes?: number
           intentos_fallidos?: number
           membresia?: Database["public"]["Enums"]["tipo_membresia"]
           nip_hash?: string | null
@@ -468,6 +603,7 @@ export type Database = {
           numero_cliente: string
           saldo_banco?: number
           saldo_cartera?: number
+          ultimo_impuesto_en?: string | null
         }
         Update: {
           auth_user_id?: string | null
@@ -479,6 +615,7 @@ export type Database = {
           estado_cuenta?: Database["public"]["Enums"]["estado_cuenta_general"]
           fecha_registro?: string
           id?: string
+          impuestos_pendientes?: number
           intentos_fallidos?: number
           membresia?: Database["public"]["Enums"]["tipo_membresia"]
           nip_hash?: string | null
@@ -486,6 +623,7 @@ export type Database = {
           numero_cliente?: string
           saldo_banco?: number
           saldo_cartera?: number
+          ultimo_impuesto_en?: string | null
         }
         Relationships: []
       }
@@ -519,9 +657,22 @@ export type Database = {
         Args: { _solicitud_id: string }
         Returns: undefined
       }
+      cancelar_multa: {
+        Args: { _motivo: string; _multa_id: string }
+        Returns: undefined
+      }
       cerrar_cuenta: {
         Args: { _motivo: string; _usuario_id: string }
         Returns: undefined
+      }
+      check_limite_transaccion: {
+        Args: { _monto: number; _usuario_id: string }
+        Returns: undefined
+      }
+      cobrar_impuestos_tick: { Args: never; Returns: Json }
+      comprar_membresia: {
+        Args: { _tipo: Database["public"]["Enums"]["tipo_membresia"] }
+        Returns: Json
       }
       condonar_deuda: { Args: { _usuario_id: string }; Returns: undefined }
       congelar_cuenta: {
@@ -534,6 +685,10 @@ export type Database = {
         Returns: undefined
       }
       dueno_usuario_id: { Args: never; Returns: string }
+      emitir_multa: {
+        Args: { _monto: number; _motivo: string; _usuario_id: string }
+        Returns: string
+      }
       generar_clabe: { Args: never; Returns: string }
       generar_numero_cliente: { Args: never; Returns: string }
       has_role: {
@@ -550,6 +705,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      marcar_recordatorio_multa: {
+        Args: { _multa_id: string }
+        Returns: undefined
+      }
       op_depositar: { Args: { _monto: number }; Returns: undefined }
       op_retirar: { Args: { _monto: number }; Returns: undefined }
       op_transferir: {
@@ -557,6 +716,8 @@ export type Database = {
         Returns: Json
       }
       pagar_credito: { Args: { _monto: number }; Returns: Json }
+      pagar_multa: { Args: { _multa_id: string }; Returns: undefined }
+      proximo_sueldo: { Args: never; Returns: Json }
       reabrir_cuenta: {
         Args: { _motivo: string; _usuario_id: string }
         Returns: undefined
@@ -565,6 +726,7 @@ export type Database = {
         Args: { _solicitud_id: string }
         Returns: undefined
       }
+      reclamar_sueldo: { Args: never; Returns: Json }
       registrar_ganancia: {
         Args: { _concepto: string; _monto: number; _usuario: string }
         Returns: undefined
@@ -575,7 +737,7 @@ export type Database = {
       usar_credito: { Args: { _monto: number }; Returns: undefined }
     }
     Enums: {
-      app_role: "admin" | "trabajador" | "usuario"
+      app_role: "admin" | "trabajador" | "usuario" | "policia"
       estado_credito:
         | "sin_solicitar"
         | "pendiente"
@@ -584,10 +746,18 @@ export type Database = {
         | "rechazada"
         | "cerrada"
       estado_cuenta_general: "activa" | "congelada" | "cerrada"
+      estado_multa: "pendiente" | "pagada" | "cancelada"
       estado_notificacion: "enviado" | "fallido"
       estado_solicitud: "pendiente" | "aprobada" | "rechazada"
       estado_tarjeta_debito: "activa" | "congelada" | "cerrada"
-      tipo_membresia: "basica" | "plus" | "black"
+      tipo_membresia:
+        | "basica"
+        | "gold"
+        | "zafiro"
+        | "esmeralda"
+        | "diamond"
+        | "ruby"
+        | "ruby_plus"
       tipo_movimiento:
         | "deposito"
         | "retiro"
@@ -602,6 +772,11 @@ export type Database = {
         | "admin_quitar"
         | "condonacion"
         | "ganancia_banco"
+        | "multa"
+        | "pago_multa"
+        | "sueldo"
+        | "impuesto"
+        | "compra_membresia"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -729,7 +904,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "trabajador", "usuario"],
+      app_role: ["admin", "trabajador", "usuario", "policia"],
       estado_credito: [
         "sin_solicitar",
         "pendiente",
@@ -739,10 +914,19 @@ export const Constants = {
         "cerrada",
       ],
       estado_cuenta_general: ["activa", "congelada", "cerrada"],
+      estado_multa: ["pendiente", "pagada", "cancelada"],
       estado_notificacion: ["enviado", "fallido"],
       estado_solicitud: ["pendiente", "aprobada", "rechazada"],
       estado_tarjeta_debito: ["activa", "congelada", "cerrada"],
-      tipo_membresia: ["basica", "plus", "black"],
+      tipo_membresia: [
+        "basica",
+        "gold",
+        "zafiro",
+        "esmeralda",
+        "diamond",
+        "ruby",
+        "ruby_plus",
+      ],
       tipo_movimiento: [
         "deposito",
         "retiro",
@@ -757,6 +941,11 @@ export const Constants = {
         "admin_quitar",
         "condonacion",
         "ganancia_banco",
+        "multa",
+        "pago_multa",
+        "sueldo",
+        "impuesto",
+        "compra_membresia",
       ],
     },
   },
